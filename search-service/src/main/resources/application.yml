@@ -1,0 +1,15 @@
+server:
+  port: 9012
+
+spring:
+  application:
+    name: search-service
+
+  elasticsearch:
+    uris: http://elasticsearch:9200
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+product-service:
+  url: http://product-service:9003

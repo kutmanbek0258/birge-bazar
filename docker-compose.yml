@@ -1,0 +1,465 @@
+version: '3.8'
+
+services:
+  # ====== Databases (оставлены без изменений) ======
+  postgres-auth:
+    image: postgres:15
+    container_name: postgres-auth
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"
+    networks:
+      - birge-bazar
+
+  postgres-user:
+    image: postgres:15
+    container_name: postgres-user
+    environment:
+      POSTGRES_DB: user_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5434:5432"
+    networks:
+      - birge-bazar
+
+  postgres-product:
+    image: postgres:15
+    container_name: postgres-product
+    environment:
+      POSTGRES_DB: product_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5435:5432"
+    networks:
+      - birge-bazar
+
+  postgres-cart:
+    image: postgres:15
+    container_name: postgres-cart
+    environment:
+      POSTGRES_DB: cart_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5436:5432"
+    networks:
+      - birge-bazar
+
+  postgres-order:
+    image: postgres:15
+    container_name: postgres-order
+    environment:
+      POSTGRES_DB: order_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5437:5432"
+    networks:
+      - birge-bazar
+
+  postgres-payment:
+    image: postgres:15
+    container_name: postgres-payment
+    environment:
+      POSTGRES_DB: payment_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5438:5432"
+    networks:
+      - birge-bazar
+
+  postgres-wms:
+    image: postgres:15
+    container_name: postgres-wms
+    environment:
+      POSTGRES_DB: wms_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5439:5432"
+    networks:
+      - birge-bazar
+
+  postgres-tracking:
+    image: postgres:15
+    container_name: postgres-tracking
+    environment:
+      POSTGRES_DB: tracking_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5440:5432"
+    networks:
+      - birge-bazar
+
+  postgres-notification:
+    image: postgres:15
+    container_name: postgres-notification
+    environment:
+      POSTGRES_DB: notification_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5441:5432"
+    networks:
+      - birge-bazar
+
+  postgres-review:
+    image: postgres:15
+    container_name: postgres-review
+    environment:
+      POSTGRES_DB: review_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5442:5432"
+    networks:
+      - birge-bazar
+
+  postgres-admin:
+    image: postgres:15
+    container_name: postgres-admin
+    environment:
+      POSTGRES_DB: admin_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5443:5432"
+    networks:
+      - birge-bazar
+
+  # ====== Message Broker ======
+  kafka:
+    image: bitnami/kafka:3.7
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    depends_on:
+      - zookeeper
+    networks:
+      - birge-bazar
+
+  zookeeper:
+    image: bitnami/zookeeper:3.8
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: "yes"
+    networks:
+      - birge-bazar
+
+  # ====== Elasticsearch for Search Service ======
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.2
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - birge-bazar
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_cat/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ====== Config, Discovery, Gateway ======
+  config-server:
+    build:
+      context: ./config-server
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    networks:
+      - birge-bazar
+    depends_on:
+      - postgres-auth
+
+  discovery-server:
+    build:
+      context: ./discovery-server
+    container_name: discovery-server
+    ports:
+      - "8761:8761"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    networks:
+      - birge-bazar
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    networks:
+      - birge-bazar
+    depends_on:
+      - config-server
+      - discovery-server
+
+  # ====== Microservices ======
+  auth-service:
+    build:
+      context: ./auth-service
+    container_name: auth-service
+    ports:
+      - "9001:9001"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://postgres-auth:5432/auth_db
+      DB_USER: postgres
+      DB_PASS: password
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks:
+      - birge-bazar
+    depends_on:
+      - postgres-auth
+      - kafka
+      - config-server
+      - discovery-server
+
+  user-service:
+    build:
+      context: ./user-service
+    container_name: user-service
+    ports:
+      - "9002:9002"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://postgres-user:5432/user_db
+      DB_USER: postgres
+      DB_PASS: password
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks:
+      - birge-bazar
+    depends_on:
+      - postgres-user
+      - kafka
+      - config-server
+      - discovery-server
+
+  product-service:
+    build:
+      context: ./product-service
+    container_name: product-service
+    ports:
+      - "9003:9003"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://postgres-product:5432/product_db
+      DB_USER: postgres
+      DB_PASS: password
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks:
+      - birge-bazar
+    depends_on:
+      - postgres-product
+      - kafka
+      - config-server
+      - discovery-server
+
+  cart-service:
+    build:
+      context: ./cart-service
+    container_name: cart-service
+    ports:
+      - "9004:9004"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://postgres-cart:5432/cart_db
+      DB_USER: postgres
+      DB_PASS: password
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks:
+      - birge-bazar
+    depends_on:
+      - postgres-cart
+      - kafka
+      - config-server
+      - discovery-server
+
+  order-service:
+    build:
+      context: ./order-service
+    container_name: order-service
+    ports:
+      - "9005:9005"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://postgres-order:5432/order_db
+      DB_USER: postgres
+      DB_PASS: password
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks:
+      - birge-bazar
+    depends_on:
+      - postgres-order
+      - kafka
+      - config-server
+      - discovery-server
+
+  payment-service:
+    build:
+      context: ./payment-service
+    container_name: payment-service
+    ports:
+      - "9006:9006"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://postgres-payment:5432/payment_db
+      DB_USER: postgres
+      DB_PASS: password
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks:
+      - birge-bazar
+    depends_on:
+      - postgres-payment
+      - kafka
+      - config-server
+      - discovery-server
+
+  wms-service:
+    build:
+      context: ./wms-service
+    container_name: wms-service
+    ports:
+      - "9007:9007"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://postgres-wms:5432/wms_db
+      DB_USER: postgres
+      DB_PASS: password
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks:
+      - birge-bazar
+    depends_on:
+      - postgres-wms
+      - kafka
+      - config-server
+      - discovery-server
+
+  tracking-service:
+    build:
+      context: ./tracking-service
+    container_name: tracking-service
+    ports:
+      - "9008:9008"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://postgres-tracking:5432/tracking_db
+      DB_USER: postgres
+      DB_PASS: password
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks:
+      - birge-bazar
+    depends_on:
+      - postgres-tracking
+      - kafka
+      - config-server
+      - discovery-server
+
+  notification-service:
+    build:
+      context: ./notification-service
+    container_name: notification-service
+    ports:
+      - "9009:9009"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://postgres-notification:5432/notification_db
+      DB_USER: postgres
+      DB_PASS: password
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks:
+      - birge-bazar
+    depends_on:
+      - postgres-notification
+      - kafka
+      - config-server
+      - discovery-server
+
+  review-service:
+    build:
+      context: ./review-service
+    container_name: review-service
+    ports:
+      - "9010:9010"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://postgres-review:5432/review_db
+      DB_USER: postgres
+      DB_PASS: password
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks:
+      - birge-bazar
+    depends_on:
+      - postgres-review
+      - kafka
+      - config-server
+      - discovery-server
+
+  admin-service:
+    build:
+      context: ./admin-service
+    container_name: admin-service
+    ports:
+      - "9011:9011"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://postgres-admin:5432/admin_db
+      DB_USER: postgres
+      DB_PASS: password
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks:
+      - birge-bazar
+    depends_on:
+      - postgres-admin
+      - kafka
+      - config-server
+      - discovery-server
+
+  search-service:
+    build:
+      context: ./search-service
+    container_name: search-service
+    ports:
+      - "9012:9012"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      PRODUCT_SERVICE_URL: http://product-service:9003
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+    networks:
+      - birge-bazar
+    depends_on:
+      - elasticsearch
+      - product-service
+      - kafka
+      - config-server
+      - discovery-server
+
+networks:
+  birge-bazar:
+    driver: bridge
