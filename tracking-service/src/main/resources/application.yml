@@ -1,6 +1,18 @@
 server:
   port: 9008
 
+spring:
+  application:
+    name: tracking-service
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5440/tracking_db}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASS:password}
+    driver-class-name: org.postgresql.Driver
+
 resilience4j:
   circuitbreaker:
     instances:
