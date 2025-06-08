@@ -14,6 +14,18 @@ services:
     networks:
       - birge-bazar
 
+  redis-auth:
+    image: redis:7.4.0
+    container_name: redis-auth
+    restart: always
+    ports:
+      - '6379:6379'
+    environment:
+      - REDIS_DATABASES=0
+      - REDIS_PASSWORD=qwerty12345678
+    networks:
+      - birge-bazar
+
   postgres-user:
     image: postgres:15
     container_name: postgres-user

@@ -7,6 +7,7 @@
 	<groupId>kg.birge.bazar</groupId>
 	<artifactId>birge-bazar</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
+	<description>Marketplace birge-bazar</description>
 	<build>
 		<plugins>
 			<plugin>
