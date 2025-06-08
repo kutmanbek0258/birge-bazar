@@ -4,14 +4,18 @@ server:
 spring:
   cloud:
     gateway:
-      routes:
-        # Примеры маршрутов, дополнять по мере добавления сервисов
-        - id: auth-service
-          uri: lb://auth-service
-          predicates:
-            - Path=/api/auth/**
-        - id: user-service
-          uri: lb://user-service
-          predicates:
-            - Path=/api/users/**
-        # и т.д.
+      mvc:
+        routes:
+          # Примеры маршрутов, дополнять по мере добавления сервисов
+          - id: user-service
+            uri: lb://user-service
+            predicates:
+              - Path=/api/users/**
+          # и т.д.
+  security:
+    oauth2:
+      resourceserver:
+        opaquetoken:
+          client-id: j-service-client
+          client-secret: j-service-client
+          introspection-uri: ${SSO_URL:http://localhost:9001}/oauth2/token-info
