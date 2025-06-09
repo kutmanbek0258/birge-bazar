@@ -1,4 +1,4 @@
-package kg.burge.bazar.adminservice;
+package kg.birge.bazar.adminservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
