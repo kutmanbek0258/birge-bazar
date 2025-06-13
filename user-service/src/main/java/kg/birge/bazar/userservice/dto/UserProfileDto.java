@@ -5,7 +5,7 @@ import kg.birge.bazar.userservice.annotation.CheckMobile;
 
 public class UserProfileDto extends AbstractDto<Long> {
     private Long id;
-    private Long userId;
+    private String userId;
     private String fullName;
     @CheckMobile
     private String phone;
@@ -25,11 +25,11 @@ public class UserProfileDto extends AbstractDto<Long> {
         return this.id;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(String userId) {
         this.userId = userId;
     }
 
-    public Long getUserId() {
+    public String getUserId() {
         return this.userId;
     }
 

@@ -248,6 +248,7 @@ services:
       - birge-bazar
     depends_on:
       - postgres-auth
+      - redis-auth
       - kafka
       - config-server
       - discovery-server

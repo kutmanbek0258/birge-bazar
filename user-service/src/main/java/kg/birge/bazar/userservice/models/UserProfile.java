@@ -1,19 +1,20 @@
 package kg.birge.bazar.userservice.models;
 
 import jakarta.persistence.*;
+import kg.birge.bazar.userservice.config.audit.AuditableCustom;
 
 @Table(name = "user_profiles", schema = "users", indexes = {
         @Index(name = "user_profiles_user_id_key", columnList = "user_id", unique = true)
 })
 @Entity
-public class UserProfile {
+public class UserProfile extends AuditableCustom<String> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 
     @Column(name = "user_id", nullable = false)
-    private Long userId;
+    private String userId;
 
     @Column(name = "full_name")
     private String fullName;
@@ -70,11 +71,11 @@ public class UserProfile {
         this.fullName = fullName;
     }
 
-    public Long getUserId() {
+    public String getUserId() {
         return userId;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(String userId) {
         this.userId = userId;
     }
 

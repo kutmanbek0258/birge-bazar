@@ -5,10 +5,10 @@ spring:
   application:
     name: user-service
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5434/user_db}
+    url: ${DB_URL:jdbc:postgresql://postgres-user:5434/user_db}
     username: ${DB_USER:postgres}
     password: ${DB_PASS:password}
     driver-class-name: org.postgresql.Driver

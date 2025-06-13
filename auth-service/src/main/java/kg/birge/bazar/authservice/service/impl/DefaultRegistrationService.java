@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class DefaultRegistrationService implements RegistrationService {
 
     private final UserService userService;
-//    private final MailSenderService mailSenderService;
     private final OTPStore otpStore;
     private final RegistrationStore registrationStore;
     private final MessageService messageService;
@@ -41,7 +40,7 @@ public class DefaultRegistrationService implements RegistrationService {
             throw InformationException.builder("$happened.unexpected.error").build();
         }
 
-//        // отправляем OTP по email
+        // отправляем OTP по email
 //        mailSenderService.sendNewMail(
 //            registrationDto.getEmail(),
 //            messageService.getMessage("email.subject.confirm.registration"),

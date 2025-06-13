@@ -8,3 +8,15 @@ databaseChangeLog:
   - include:
       file: release-1.0.0/release.changelog.yaml
       relativeToChangelogFile: true
+  - include:
+      file: release-1.1.0/release.changelog.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: release-1.1.1/release.changelog.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: release-1.1.2/release.changelog.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: release-1.1.3/release.changelog.yaml
+      relativeToChangelogFile: true

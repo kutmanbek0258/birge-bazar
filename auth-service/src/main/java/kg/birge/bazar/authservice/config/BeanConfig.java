@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.nio.file.Path;
@@ -54,7 +53,6 @@ public class BeanConfig {
     }
 
     @Bean
-    @Primary
     public ConfirmationStore changePasswordStore(
         OTPStore.Config otpStoreConfig,
         StringRedisTemplate redisTemplate,

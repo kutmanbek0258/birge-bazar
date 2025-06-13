@@ -2,7 +2,7 @@ package kg.birge.bazar.userservice.dto;
 
 public class AddressDto extends AbstractDto<Long> {
     private Long id;
-    private Long userId;
+    private String userId;
     private String addressText;
     private String city;
     private String postalCode;
@@ -19,11 +19,11 @@ public class AddressDto extends AbstractDto<Long> {
         return this.id;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(String userId) {
         this.userId = userId;
     }
 
-    public Long getUserId() {
+    public String getUserId() {
         return this.userId;
     }
 

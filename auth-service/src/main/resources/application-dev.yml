@@ -20,41 +20,6 @@ spring:
           exposed-headers: ${spring.security.oauth2.authorizationserver.custom-handler-header-name}
           allowed-methods: "*"
           allow-credentials: true
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-  data:
-    redis:
-      client-type: lettuce
-      database: ${REDIS_DB:0}
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASS:qwerty12345678}
-      lettuce:
-        pool:
-          max-active: 16
-          max-idle: 8
-  liquibase:
-    enabled: false
-    change-log: classpath:database/db.changelog.yaml
-    contexts: prod, dev
-  datasource:
-    url: ${PG_URL:jdbc:postgresql://localhost:5433/auth_db}
-    username: ${PG_USER:postgres}
-    password: ${PG_PASS:password}
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      connection-timeout: 30000
-      connection-test-query: select 1
-      maximum-pool-size: 10
-      minimum-idle: 10
-      initialization-fail-timeout: 1
-      leak-detection-threshold: 0
-      pool-name: "HikariPool-j-sso"
-      register-mbeans: true
-  jpa:
-    show-sql: false
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
-    open-in-view: false
   web:
     resources:
       static-locations: classpath:static
@@ -113,6 +78,41 @@ spring:
             token-uri: https://oauth.yandex.ru/token
             user-name-attribute: default_email
             userInfoUri: https://login.yandex.ru/info
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+  data:
+    redis:
+      client-type: lettuce
+      database: ${REDIS_DB:0}
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASS:qwerty12345678}
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+  liquibase:
+    enabled: false
+    change-log: classpath:database/db.changelog.yaml
+    contexts: prod, dev
+  datasource:
+    url: ${PG_URL:jdbc:postgresql://localhost:5433/auth_db}
+    username: ${PG_USER:postgres}
+    password: ${PG_PASS:password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 30000
+      connection-test-query: select 1
+      maximum-pool-size: 10
+      minimum-idle: 10
+      initialization-fail-timeout: 1
+      leak-detection-threshold: 0
+      pool-name: "HikariPool-j-sso"
+      register-mbeans: true
+  jpa:
+    show-sql: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
 
 yandex-avatar-url: https://avatars.yandex.net/get-yapic/{avatarId}/islands-retina-50
 
@@ -144,3 +144,19 @@ resilience4j:
         minimumNumberOfCalls: 5
         failureRateThreshold: 50
         waitDurationInOpenState: 10000
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: prod
+  security:
+    headers:
+      csp:
+        - default-src 'self'
+        - script-src 'self'
+        - "img-src 'self' data:"
+        - font-src 'self' fonts.gstatic.com
+        - style-src 'self' fonts.googleapis.com 'nonce-dQw4w9WgXcQ' 'sha256-VBcDFo4Ltbcy2NNfi2Jeyo6IXzMKysUIvWc1d1FGhgY='
+        - frame-ancestors 'self'

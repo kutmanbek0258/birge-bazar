@@ -12,3 +12,6 @@
   
     Команда для запуска в профиле dev   
   ``java -jar auth-service.jar --spring.profiles.active=dev``
+  
+    Команда для раската БД  
+  ``mvn liquibase:update -Dliquibase.searchPath=./``

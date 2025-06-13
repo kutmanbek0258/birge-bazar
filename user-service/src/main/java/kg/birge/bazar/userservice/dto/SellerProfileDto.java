@@ -2,7 +2,7 @@ package kg.birge.bazar.userservice.dto;
 
 public class SellerProfileDto extends AbstractDto<Long> {
     private Long id;
-    private Long userId;
+    private String userId;
     private String shopName;
     private String description;
     private String legalInfo;
@@ -20,11 +20,11 @@ public class SellerProfileDto extends AbstractDto<Long> {
         return this.id;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(String userId) {
         this.userId = userId;
     }
 
-    public Long getUserId() {
+    public String getUserId() {
         return this.userId;
     }
 

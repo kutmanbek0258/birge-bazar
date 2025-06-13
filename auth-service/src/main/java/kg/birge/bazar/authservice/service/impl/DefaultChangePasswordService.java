@@ -11,23 +11,32 @@ import kg.birge.bazar.authservice.service.ChangePasswordService;
 import kg.birge.bazar.authservice.service.MessageService;
 import kg.birge.bazar.authservice.service.UserService;
 import kg.birge.bazar.authservice.utils.SecurityUtils;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 public class DefaultChangePasswordService implements ChangePasswordService {
 
     private final static String PASSWORD_KEY = "password";
 
     private final OTPStore otpStore;
     private final ConfirmationStore changePasswordStore;
-//    private final MailSenderService mailSenderService;
     private final MessageService messageService;
     private final UserService userService;
+
+
+    public DefaultChangePasswordService(OTPStore otpStore,
+                                        @Qualifier("changePasswordStore")ConfirmationStore changePasswordStore,
+                                        MessageService messageService,
+                                        UserService userService) {
+        this.otpStore = otpStore;
+        this.changePasswordStore = changePasswordStore;
+        this.messageService = messageService;
+        this.userService = userService;
+    }
 
     @Override
     public void init(String newPassword, HttpServletResponse response) {

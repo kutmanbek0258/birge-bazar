@@ -12,22 +12,32 @@ import kg.birge.bazar.authservice.service.MessageService;
 import kg.birge.bazar.authservice.service.ResetPasswordService;
 import kg.birge.bazar.authservice.service.UserService;
 import kg.birge.bazar.authservice.utils.CryptoUtils;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
-@RequiredArgsConstructor
 public class DefaultResetPasswordService implements ResetPasswordService {
 
     private static final String SESSION_ID_HEADER = "reset-password-session";
 
-//    private final MailSenderService mailSenderService;
     private final OTPStore otpStore;
     private final ConfirmationStore resetPasswordStore;
     private final AuthorizationServerProperties authorizationServerProperties;
     private final UserService userService;
     private final MessageService messageService;
+
+    public DefaultResetPasswordService(OTPStore otpStore,
+                                       @Qualifier("resetPasswordStore")ConfirmationStore resetPasswordStore,
+                                       AuthorizationServerProperties authorizationServerProperties,
+                                       UserService userService,
+                                       MessageService messageService) {
+        this.otpStore = otpStore;
+        this.resetPasswordStore = resetPasswordStore;
+        this.authorizationServerProperties = authorizationServerProperties;
+        this.userService = userService;
+        this.messageService = messageService;
+    }
 
     @Override
     public void initial(String email, HttpServletResponse response) {

@@ -52,7 +52,7 @@ public class UserProfileController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Void> update(@RequestBody @Validated UserProfileDto userProfileDto, @PathVariable("id") Long id) {
-        userProfileService.update(userProfileDto, id);
+        userProfileService.update(id, userProfileDto);
         return ResponseEntity.ok().build();
     }
 }

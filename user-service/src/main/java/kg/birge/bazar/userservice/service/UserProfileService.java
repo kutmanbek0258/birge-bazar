@@ -2,7 +2,9 @@ package kg.birge.bazar.userservice.service;
 
 import cn.hutool.core.bean.BeanUtil;
 import jakarta.transaction.Transactional;
+import kg.birge.bazar.userservice.aop.EntityHistoryAudit;
 import kg.birge.bazar.userservice.dto.UserProfileDto;
+import kg.birge.bazar.userservice.mapper.EntityHistoryMapper;
 import kg.birge.bazar.userservice.mapper.UserProfileMapper;
 import kg.birge.bazar.userservice.models.UserProfile;
 import kg.birge.bazar.userservice.repository.UserProfileRepository;
@@ -21,11 +23,13 @@ public class UserProfileService {
     private final UserProfileRepository repository;
     private final UserProfileMapper userProfileMapper;
 
+//    @EntityHistoryAudit(entityType = "USER_PROFILE", entityChangeType = "CREATE", dtoClass = UserProfileDto.class)
     public UserProfileDto save(UserProfileDto userProfileDto) {
         UserProfile entity = userProfileMapper.toEntity(userProfileDto);
         return userProfileMapper.toDto(repository.save(entity));
     }
 
+//    @EntityHistoryAudit(entityType = "USER_PROFILE", entityChangeType = "DELETE", dtoClass = UserProfileDto.class)
     public void deleteById(Long id) {
         repository.deleteById(id);
     }
@@ -40,10 +44,11 @@ public class UserProfileService {
         return new PageImpl<>(userProfileMapper.toDto(entities), pageable, entityPage.getTotalElements());
     }
 
-    public UserProfileDto update(UserProfileDto userProfileDto, Long id) {
+//    @EntityHistoryAudit(entityType = "USER_PROFILE", entityChangeType = "UPDATE", dtoClass = UserProfileDto.class)
+    public UserProfileDto update(Long id, UserProfileDto userProfileDto) {
         UserProfileDto data = findById(id);
         UserProfile entity = userProfileMapper.toEntity(userProfileDto);
         BeanUtil.copyProperties(entity, data, "id", "userId");
-        return save(userProfileMapper.toDto(entity));
+        return save(data);
     }
 }
