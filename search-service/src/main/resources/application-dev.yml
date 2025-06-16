@@ -15,6 +15,18 @@ spring:
       group-id: search-service-group
       auto-offset-reset: earliest
       enable-auto-commit: false
+  auth-types:
+    auth-header-enabled: true
+    client-credentials-enabled: true
+    authorization-code-enabled: true
+
+  security:
+    oauth2:
+      resourceserver:
+        opaquetoken:
+          client-id: j-service-client
+          client-secret: j-service-client
+          introspection-uri: ${SSO_URL:http://localhost:9001}/oauth2/token-info
 
 search:
   index:

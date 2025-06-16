@@ -5,7 +5,8 @@ import kg.birge.bazar.productservice.config.audit.AuditableCustom;
 import org.hibernate.envers.Audited;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+
+import static org.hibernate.envers.RelationTargetAuditMode.NOT_AUDITED;
 
 @Table(name = "products", schema = "products")
 @Entity
@@ -17,10 +18,12 @@ public class Product extends AuditableCustom<String> {
     private Long id;
 
     @Column(name = "seller_id", nullable = false)
-    private Long sellerId;
+    private String sellerId;
 
-    @Column(name = "category_id", nullable = false)
-    private Long categoryId;
+    @ManyToOne
+    @JoinColumn(name = "category_id", nullable = false)
+    @Audited(targetAuditMode = NOT_AUDITED)
+    private Category category;
 
     @Column(name = "name", nullable = false)
     private String name;
@@ -111,19 +114,19 @@ public class Product extends AuditableCustom<String> {
         this.name = name;
     }
 
-    public Long getCategoryId() {
-        return categoryId;
+    public Category getCategoryId() {
+        return category;
     }
 
-    public void setCategoryId(Long categoryId) {
-        this.categoryId = categoryId;
+    public void setCategoryId(Category category) {
+        this.category = category;
     }
 
-    public Long getSellerId() {
+    public String getSellerId() {
         return sellerId;
     }
 
-    public void setSellerId(Long sellerId) {
+    public void setSellerId(String sellerId) {
         this.sellerId = sellerId;
     }
 

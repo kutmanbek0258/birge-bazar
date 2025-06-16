@@ -4,8 +4,8 @@ import java.math.BigDecimal;
 
 public class ProductDto extends AbstractDto<Long> {
     private Long id;
-    private Long sellerId;
-    private Long categoryId;
+    private String sellerId;
+    private CategoryDto category;
     private String name;
     private String description;
     private BigDecimal price;
@@ -26,20 +26,20 @@ public class ProductDto extends AbstractDto<Long> {
         return this.id;
     }
 
-    public void setSellerId(Long sellerId) {
+    public void setSellerId(String sellerId) {
         this.sellerId = sellerId;
     }
 
-    public Long getSellerId() {
+    public String getSellerId() {
         return this.sellerId;
     }
 
-    public void setCategoryId(Long categoryId) {
-        this.categoryId = categoryId;
+    public void setCategoryId(CategoryDto category) {
+        this.category = category;
     }
 
-    public Long getCategoryId() {
-        return this.categoryId;
+    public CategoryDto getCategoryId() {
+        return this.category;
     }
 
     public void setName(String name) {
