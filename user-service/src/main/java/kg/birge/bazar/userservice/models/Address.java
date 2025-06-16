@@ -2,9 +2,11 @@ package kg.birge.bazar.userservice.models;
 
 import jakarta.persistence.*;
 import kg.birge.bazar.userservice.config.audit.AuditableCustom;
+import org.hibernate.envers.Audited;
 
 @Table(name = "addresses", schema = "users")
 @Entity
+@Audited
 public class Address extends AuditableCustom<String> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -44,6 +44,6 @@ public class AddressService {
         AddressDto data = findById(id);
         Address entity = addressMapper.toEntity(addressDto);
         BeanUtil.copyProperties(entity, data, "id", "userId");
-        return save(addressMapper.toDto(entity));
+        return save(data);
     }
 }

@@ -1,0 +1,18 @@
+databaseChangeLog:
+  #  Objects
+  - include:
+      file: object/categories.sql
+      relativeToChangelogFile: true
+      contextFilter: prod
+  - include:
+      file: object/products.sql
+      relativeToChangelogFile: true
+      contextFilter: prod
+  - include:
+      file: object/product_images.sql
+      relativeToChangelogFile: true
+      contextFilter: prod
+  - include:
+      file: object/product_attributes.sql
+      relativeToChangelogFile: true
+      contextFilter: prod

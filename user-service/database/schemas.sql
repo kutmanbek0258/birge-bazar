@@ -1,4 +1,4 @@
 --liquibase formatted sql
 
---changeset daivanov:schemas-1
+--changeset kutman:schemas-1
 CREATE SCHEMA users;

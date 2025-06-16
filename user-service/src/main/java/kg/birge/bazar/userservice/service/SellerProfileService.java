@@ -44,6 +44,6 @@ public class SellerProfileService {
         SellerProfileDto data = findById(id);
         SellerProfile entity = sellerProfileMapper.toEntity(sellerProfileDto);
         BeanUtil.copyProperties(entity, data, "id", "userId");
-        return save(sellerProfileMapper.toDto(entity));
+        return save(data);
     }
 }
