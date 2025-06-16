@@ -4,13 +4,13 @@ spring:
   application:
     name: search-service
   elasticsearch:
-    uris: ${ELASTICSEARCH_URI:elasticsearch:9200}
+    uris: ${ELASTICSEARCH_URI:localhost:9200}
     username: ${ELASTICSEARCH_USER:}
     password: ${ELASTICSEARCH_PASS:}
     connection-timeout: 2s
     socket-timeout: 10s
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       group-id: search-service-group
       auto-offset-reset: earliest
