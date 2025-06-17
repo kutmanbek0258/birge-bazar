@@ -2,18 +2,20 @@ package kg.birge.bazar.searchservice.controller;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.FieldValue;
-import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.SortOptions;
+import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
-import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.json.JsonData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.util.*;
@@ -97,8 +99,8 @@ public class ProductSearchController {
 
         SearchResponse<Map> searchResponse = elasticsearchClient.search(searchRequest, Map.class);
 
-        List<Map> products = searchResponse.hits().hits().stream()
-                .map(Hit::source)
+        List<Map<String, Object>> products = searchResponse.hits().hits().stream()
+                .map(hit -> (Map<String, Object>) hit.source())
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
