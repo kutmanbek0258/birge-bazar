@@ -1,0 +1,355 @@
+{
+	"info": {
+		"_postman_id": "48d22a14-1a8a-47aa-851d-aab5d0097367",
+		"name": "Marketplace",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "13605726"
+	},
+	"item": [
+		{
+			"name": "user-service",
+			"item": [
+				{
+					"name": "user-profile",
+					"item": [
+						{
+							"name": "Create prfile",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"userId\": \"a5a88576-e866-4253-b111-9902721fa790\",\n    \"fullName\": \"Kutman Smanov\",\n    \"phone\": \"+996999780094\",\n    \"email\": \"smanovkutman0258@gmail.com\",\n    \"defaultAddressId\": \"5066305\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "localhost:9002/api/user-profile",
+									"host": [
+										"localhost"
+									],
+									"port": "9002",
+									"path": [
+										"api",
+										"user-profile"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update profile",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"userId\": \"a5a88576-e866-4253-b111-9902721fa790\",\n    \"fullName\": \"Kutman Smanov's profile updated v4\",\n    \"phone\": \"+996999780094\",\n    \"email\": \"smanovkutman0258@gmail.com\",\n    \"defaultAddressId\": \"5066305\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "localhost:9002/api/user-profile/3",
+									"host": [
+										"localhost"
+									],
+									"port": "9002",
+									"path": [
+										"api",
+										"user-profile",
+										"3"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "New Request",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "localhost:9002/api/user-profile/1",
+									"host": [
+										"localhost"
+									],
+									"port": "9002",
+									"path": [
+										"api",
+										"user-profile",
+										"1"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "address",
+					"item": [
+						{
+							"name": "create address",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"userId\": \"a5a88576-e866-4253-b111-9902721fa790\",\n    \"addressText\": \"Kyzyl-Tokoy Agartuu st.55\",\n    \"city\": \"Jalal-Abad\",\n    \"postalCode\": \"6075977\",\n    \"isDefault\": true\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "localhost:9002/address",
+									"host": [
+										"localhost"
+									],
+									"port": "9002",
+									"path": [
+										"address"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "product-service",
+			"item": [
+				{
+					"name": "category",
+					"item": [
+						{
+							"name": "localhost:9003/api/category",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Laptops\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "localhost:9003/api/category",
+									"host": [
+										"localhost"
+									],
+									"port": "9003",
+									"path": [
+										"api",
+										"category"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "product",
+					"item": [
+						{
+							"name": "create-product",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Gateway creator 15.6\",\n    \"sellerId\":\"a5a88576-e866-4253-b111-9902721fa790\",\n    \"category\": {\n        \"id\": 1\n    },\n    \"description\": \"Gateway creator 15.6\",\n    \"price\": 23000,\n    \"discountPrice\": 21900,\n    \"status\": \"ACTIVE\",\n    \"fulfillmentSchema\": \"FBO\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "localhost:9003/product",
+									"host": [
+										"localhost"
+									],
+									"port": "9003",
+									"path": [
+										"product"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "search-service",
+			"item": [
+				{
+					"name": "search request",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:9012/api/search/products?page=0&size=10&sort=name,desc&maxPrice=30000&minPrice=0&categoryId=1",
+							"host": [
+								"localhost"
+							],
+							"port": "9012",
+							"path": [
+								"api",
+								"search",
+								"products"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sort",
+									"value": "name,desc"
+								},
+								{
+									"key": "query",
+									"value": "Lenovo",
+									"disabled": true
+								},
+								{
+									"key": "maxPrice",
+									"value": "30000"
+								},
+								{
+									"key": "minPrice",
+									"value": "0"
+								},
+								{
+									"key": "categoryId",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "elasticsearch",
+			"item": [
+				{
+					"name": "http://localhost:9200/products",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:9200/products",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9200",
+							"path": [
+								"products"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "oauth2",
+		"oauth2": [
+			{
+				"key": "scope",
+				"value": "SSO.USER_PROFILE_INFO SSO.USER_AVATAR SSO.USER_IDENTIFICATION SSO.USER_AUTHORITIES",
+				"type": "string"
+			},
+			{
+				"key": "clientSecret",
+				"value": "test-client",
+				"type": "string"
+			},
+			{
+				"key": "clientId",
+				"value": "test-client",
+				"type": "string"
+			},
+			{
+				"key": "authUrl",
+				"value": "http://localhost:9001/oauth2/authorize",
+				"type": "string"
+			},
+			{
+				"key": "accessTokenUrl",
+				"value": "http://localhost:9001/oauth2/token",
+				"type": "string"
+			},
+			{
+				"key": "useBrowser",
+				"value": true,
+				"type": "boolean"
+			},
+			{
+				"key": "redirect_uri",
+				"value": "http://localhost:7777/oauth2/authorize",
+				"type": "string"
+			},
+			{
+				"key": "addTokenTo",
+				"value": "header",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

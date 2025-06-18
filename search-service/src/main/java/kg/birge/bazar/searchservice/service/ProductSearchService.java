@@ -29,7 +29,7 @@ public class ProductSearchService {
 
     public Map<String, Object> searchProducts(
             String query,
-            String category,
+            String categoryId,
             Double minPrice,
             Double maxPrice,
             Pageable pageable
@@ -42,9 +42,9 @@ public class ProductSearchService {
                 filters.add(Query.of(q ->
                         q.multiMatch(m -> m.query(query).fields("title", "description"))));
             }
-            if (category != null && !category.isBlank()) {
+            if (categoryId != null && !categoryId.isBlank()) {
                 filters.add(Query.of(q ->
-                        q.term(t -> t.field("category").value(category))));
+                        q.term(t -> t.field("category.id").value(categoryId))));
             }
             if (minPrice != null || maxPrice != null) {
                 filters.add(Query.of(q ->
@@ -85,8 +85,8 @@ public class ProductSearchService {
                 sortOptions.add(
                         SortOptions.of(s ->
                                 s.field(f -> f
-                                        .field("name.keyword")
-                                        .order(SortOrder.Asc)
+                                        .field("createdDate")
+                                        .order(SortOrder.Desc)
                                 )
                         )
                 );

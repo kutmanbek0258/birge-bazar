@@ -17,11 +17,11 @@ public class ProductSearchController {
     @GetMapping
     public Map<String, Object> searchProducts(
             @RequestParam(required = false) String query,
-            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String categoryId,
             @RequestParam(required = false) Double minPrice,
             @RequestParam(required = false) Double maxPrice,
             Pageable pageable
     ) {
-        return productSearchService.searchProducts(query, category, minPrice, maxPrice, pageable);
+        return productSearchService.searchProducts(query, categoryId, minPrice, maxPrice, pageable);
     }
 }

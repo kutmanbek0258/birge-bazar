@@ -35,8 +35,9 @@ public class ProductService {
 
     public ProductDto save(ProductDto productDto) {
         Product entity = productMapper.toEntity(productDto);
-        publishProductEvent(entity);
-        return productMapper.toDto(repository.save(entity));
+        Product savedProduct = repository.save(entity);
+        publishProductEvent(savedProduct);
+        return productMapper.toDto(savedProduct);
     }
 
     public void deleteById(Long id) {
