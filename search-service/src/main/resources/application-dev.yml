@@ -30,6 +30,9 @@ spring:
           client-secret: j-service-client
           introspection-uri: ${SSO_URL:http://localhost:9001}/oauth2/token-info
 
+product-service:
+  url: http://localhost:9003
+
 search:
   index:
     name: products
