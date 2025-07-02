@@ -8,7 +8,7 @@
 - Пример настроек берется из Config Server
 
     Команда для сборки  
-  ``mvn package spring-boot:repackage -P client-only-copy``
+  ``mvn package spring-boot:repackage -P client-build-and-copy``
   
     Команда для запуска в профиле dev   
   ``java -jar auth-service.jar --spring.profiles.active=dev``

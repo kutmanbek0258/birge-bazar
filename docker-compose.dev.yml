@@ -1,0 +1,259 @@
+version: '3.8'
+
+services:
+  # ====== Databases (оставлены без изменений) ======
+  postgres-auth:
+    ports:
+      - "5433:5432"
+    networks:
+      - dev-net
+
+  redis-auth:
+    ports:
+      - '6379:6379'
+    networks:
+      - dev-net
+
+  postgres-user:
+    ports:
+      - "5434:5432"
+    networks:
+      - dev-net
+
+  postgres-product:
+    ports:
+      - "5435:5432"
+    networks:
+      - dev-net
+
+  postgres-cart:
+    ports:
+      - "5436:5432"
+    networks:
+      - dev-net
+
+  postgres-order:
+    ports:
+      - "5437:5432"
+    networks:
+      - dev-net
+
+  postgres-payment:
+    ports:
+      - "5438:5432"
+    networks:
+      - dev-net
+
+  postgres-wms:
+    ports:
+      - "5439:5432"
+    networks:
+      - dev-net
+
+  postgres-tracking:
+    ports:
+      - "5440:5432"
+    networks:
+      - dev-net
+
+  postgres-notification:
+    ports:
+      - "5441:5432"
+    networks:
+      - dev-net
+
+  postgres-review:
+    ports:
+      - "5442:5432"
+    networks:
+      - dev-net
+
+  postgres-admin:
+    ports:
+      - "5443:5432"
+    networks:
+      - dev-net
+
+  # ====== Message Broker ======
+  kafka:
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    networks:
+      - dev-net
+
+  zookeeper:
+    ports:
+      - "2181:2181"
+    networks:
+      - dev-net
+
+  # ====== Elasticsearch for Search Service ======
+  elasticsearch:
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - dev-net
+
+  # ====== Config, Discovery, Gateway ======
+  config-server:
+    ports:
+      - "8888:8888"
+    networks:
+      - dev-net
+
+  discovery-server:
+    ports:
+      - "8761:8761"
+    networks:
+      - dev-net
+
+  api-gateway:
+    ports:
+      - "8080:8080"
+    networks:
+      - dev-net
+    depends_on:
+      - config-server
+      - discovery-server
+
+  # ====== Microservices ======
+  auth-service:
+    ports:
+      - "9001:9001"
+    networks:
+      - dev-net
+    depends_on:
+      - postgres-auth
+      - redis-auth
+      - kafka
+      - config-server
+      - discovery-server
+
+  user-service:
+    ports:
+      - "9002:9002"
+    networks:
+      - dev-net
+    depends_on:
+      - postgres-user
+      - kafka
+      - config-server
+      - discovery-server
+
+  product-service:
+    ports:
+      - "9003:9003"
+    networks:
+      - dev-net
+    depends_on:
+      - postgres-product
+      - kafka
+      - config-server
+      - discovery-server
+
+  cart-service:
+    ports:
+      - "9004:9004"
+    networks:
+      - dev-net
+    depends_on:
+      - postgres-cart
+      - kafka
+      - config-server
+      - discovery-server
+
+  order-service:
+    ports:
+      - "9005:9005"
+    networks:
+      - dev-net
+    depends_on:
+      - postgres-order
+      - kafka
+      - config-server
+      - discovery-server
+
+  payment-service:
+    ports:
+      - "9006:9006"
+    networks:
+      - dev-net
+    depends_on:
+      - postgres-payment
+      - kafka
+      - config-server
+      - discovery-server
+
+  wms-service:
+    ports:
+      - "9007:9007"
+    networks:
+      - dev-net
+    depends_on:
+      - postgres-wms
+      - kafka
+      - config-server
+      - discovery-server
+
+  tracking-service:
+    ports:
+      - "9008:9008"
+    networks:
+      - dev-net
+    depends_on:
+      - postgres-tracking
+      - kafka
+      - config-server
+      - discovery-server
+
+  notification-service:
+    ports:
+      - "9009:9009"
+    networks:
+      - dev-net
+    depends_on:
+      - postgres-notification
+      - kafka
+      - config-server
+      - discovery-server
+
+  review-service:
+    ports:
+      - "9010:9010"
+    networks:
+      - dev-net
+    depends_on:
+      - postgres-review
+      - kafka
+      - config-server
+      - discovery-server
+
+  admin-service:
+    ports:
+      - "9011:9011"
+    networks:
+      - dev-net
+    depends_on:
+      - postgres-admin
+      - kafka
+      - config-server
+      - discovery-server
+
+  search-service:
+    ports:
+      - "9012:9012"
+    networks:
+      - dev-net
+    depends_on:
+      - elasticsearch
+      - product-service
+      - kafka
+      - config-server
+      - discovery-server
+
+networks:
+  dev-net:
+    driver: bridge
