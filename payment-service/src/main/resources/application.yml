@@ -13,6 +13,8 @@ spring:
     password: ${DB_PASS:password}
     driver-class-name: org.postgresql.Driver
 
+  
+
 resilience4j:
   circuitbreaker:
     instances:

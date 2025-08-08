@@ -1,6 +1,0 @@
-databaseChangeLog:
-  #  Objects
-  - include:
-      file: object/entities_modified.sql
-      relativeToChangelogFile: true
-      contextFilter: prod

@@ -39,6 +39,7 @@
         <module>cart-service</module>
         <module>search-service</module>
 		<module>logistics-service</module>
+		<module>seller-service</module>
         <!--		<module>common-lib</module>-->
 	</modules>
 	<properties>

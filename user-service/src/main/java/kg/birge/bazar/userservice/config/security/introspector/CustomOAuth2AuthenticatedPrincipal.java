@@ -59,4 +59,3 @@ public class CustomOAuth2AuthenticatedPrincipal extends TokenInfoOAuth2ClaimAcce
 
 
 }
-

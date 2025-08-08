@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: ebt32945
+      changes:
+        - empty:
+            comment: "Initial empty changelog"

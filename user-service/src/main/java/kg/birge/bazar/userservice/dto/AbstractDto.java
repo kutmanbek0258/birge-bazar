@@ -4,20 +4,20 @@ import java.time.LocalDateTime;
 
 public class AbstractDto<E> {
 
-    private LocalDateTime createdDate;
+    private LocalDateTime createAt;
 
-    private LocalDateTime lastModifiedDate;
+    private LocalDateTime lastModifiedAt;
 
     private String createdBy;
 
     private String lastModifiedBy;
 
-    public LocalDateTime getCreatedDate() {
-        return createdDate;
+    public LocalDateTime getCreateAt() {
+        return createAt;
     }
 
-    public void setCreatedDate(LocalDateTime createdDate) {
-        this.createdDate = createdDate;
+    public void setCreateAt(LocalDateTime createAt) {
+        this.createAt = createAt;
     }
 
     public String getLastModifiedBy() {
@@ -36,11 +36,11 @@ public class AbstractDto<E> {
         this.createdBy = createdBy;
     }
 
-    public LocalDateTime getLastModifiedDate() {
-        return lastModifiedDate;
+    public LocalDateTime getLastModifiedAt() {
+        return lastModifiedAt;
     }
 
-    public void setLastModifiedDate(LocalDateTime lastModifiedDate) {
-        this.lastModifiedDate = lastModifiedDate;
+    public void setLastModifiedAt(LocalDateTime lastModifiedAt) {
+        this.lastModifiedAt = lastModifiedAt;
     }
 }

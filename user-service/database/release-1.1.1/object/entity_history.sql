@@ -1,1 +1,0 @@
-alter table users.entity_history alter column owner_id type varchar(100) using owner_id::varchar(100);

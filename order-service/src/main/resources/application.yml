@@ -1,24 +1,26 @@
 server:
-  port: 9005
+  port: 9005 # Port for Order Service
 
 spring:
   application:
     name: order-service
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5437/order_db}
-    username: ${DB_USER:postgres}
-    password: ${DB_PASS:password}
+    url: jdbc:postgresql://localhost:5432/order_db
+    username: user
+    password: password
     driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
 
-resilience4j:
-  circuitbreaker:
-    instances:
+
+
+feign:
+  client:
+    config:
       default:
-        registerHealthIndicator: true
-        slidingWindowSize: 10
-        minimumNumberOfCalls: 5
-        failureRateThreshold: 50
-        waitDurationInOpenState: 10000
+        connectTimeout: 5000
+        readTimeout: 5000
+        loggerLevel: basic

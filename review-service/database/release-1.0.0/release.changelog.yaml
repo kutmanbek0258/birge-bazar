@@ -1,0 +1,8 @@
+databaseChangeLog:
+  #  Objects
+  - include:
+      file: object/objects.sql
+      relativeToChangelogFile: true
+  - include:
+      file: object/V2__update_reviews_table.sql
+      relativeToChangelogFile: true
