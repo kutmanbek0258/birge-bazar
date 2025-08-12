@@ -1,6 +1,6 @@
 Для преобразования сущностей базы данных в формат PostgreSQL, я предоставлю SQL-скрипты `CREATE TABLE` для каждого микросервиса. Это включает определение типов данных, первичных и уникальных ключей, а также ограничений `NOT NULL`.
 
-Важно помнить, что в микросервисной архитектуре, хотя я и укажу "логические" внешние ключи между сервисами для ясности, физические `FOREIGN KEY` ограничения в базе данных обычно не создаются между таблицами, принадлежащими разным микросервисам. Целостность данных в таких случаях поддерживается на уровне бизнес-логики и межсервисного взаимодействия (например, с использованием паттерна "Event Sourcing" или "Saga").
+Важно помнить, что в микросервисной архитектуре, хотя я и укажу "логические" внешние ключи между сервисами для ясности, физические `FOREIGN KEY` ограничения в базе данных обычно не создаются между таблицами, принадлежащими разным микросервисам. Целостность данных в таких случаях поддерживается на уровне бизнес-логики сервисов и межсервисного взаимодействия (например, с использованием паттерна "Event Sourcing" или "Saga").
 
 Я буду использовать `BIGINT` для большинства ID (для обеспечения высокой масштабируемости, хотя `UUID` также является хорошим выбором для глобальной уникальности), `TIMESTAMP WITH TIME ZONE` для временных меток и `NUMERIC` для денежных значений.
 
@@ -20,42 +20,65 @@ last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 
 -----
 
+### **Соответствие Микросервисов и Баз Данных**
+
+Ниже представлено соответствие каждого микросервиса его выделенной базе данных. Это обеспечивает изоляцию данных и независимость развертывания.
+
+*   **User Service:** `user_db`
+*   **Auth Service:** `auth_db`
+*   **Product Service:** `product_db`
+*   **Order Service:** `order_db`
+*   **Review Service:** `review_db`
+*   **Payment Service:** `payment_db`
+*   **Notification Service:** `notification_db`
+*   **Logistics Service:** `logistics_db`
+*   **WMS Service:** `wms_db`
+*   **Admin Service:** `admin_db`
+*   **Seller Service:** `seller_db`
+*   **Promotion Service:** `promotion_db`
+*   **QA Service:** `qa_db`
+*   **Messaging Service:** `messaging_db`
+*   **Search Service:** `search_db`
+*   **Cart Service:** `cart_db`
+
+-----
+
 #### **Общие ENUM типы (если используются несколькими сервисами)**
 
 В реальной системе ENUM'ы часто определяются в конкретных сервисах, но для демонстрации можно представить общие.
 
 ```sql
 -- Общие ENUM типы (могут быть определены в отдельных сервисах)
-CREATE TYPE user_status_enum AS ENUM ('ACTIVE', 'BLOCKED', 'PENDING_VERIFICATION');
-CREATE TYPE gender_enum AS ENUM ('MALE', 'FEMALE', 'OTHER');
-CREATE TYPE order_status_enum AS ENUM ('PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED');
-CREATE TYPE payment_status_enum AS ENUM ('PENDING', 'PAID', 'FAILED', 'REFUNDED', 'AUTHORIZED');
-CREATE TYPE payment_method_type_enum AS ENUM ('CARD', 'CASH_ON_DELIVERY', 'E_WALLET');
-CREATE TYPE review_status_enum AS ENUM ('PENDING_MODERATION', 'APPROVED', 'REJECTED', 'HIDDEN');
-CREATE TYPE notification_type_enum AS ENUM ('ORDER_STATUS', 'PROMOTION', 'MESSAGE', 'REVIEW_REMINDER', 'WMS_ALERT');
-CREATE TYPE shipping_method_type_enum AS ENUM ('COURIER', 'PICKUP', 'POSTAMAT');
+CREATE TYPE user_service.user_status_enum AS ENUM ('ACTIVE', 'BLOCKED', 'PENDING_VERIFICATION');
+CREATE TYPE user_service.gender_enum AS ENUM ('MALE', 'FEMALE', 'OTHER');
+CREATE TYPE order_service.order_status_enum AS ENUM ('PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED');
+CREATE TYPE payment_service.payment_status_enum AS ENUM ('PENDING', 'PAID', 'FAILED', 'REFUNDED', 'AUTHORIZED');
+CREATE TYPE payment_service.payment_method_type_enum AS ENUM ('CARD', 'CASH_ON_DELIVERY', 'E_WALLET');
+CREATE TYPE review_service.review_status_enum AS ENUM ('PENDING_MODERATION', 'APPROVED', 'REJECTED', 'HIDDEN');
+CREATE TYPE notification_service.notification_type_enum AS ENUM ('ORDER_STATUS', 'PROMOTION', 'MESSAGE', 'REVIEW_REMINDER', 'WMS_ALERT');
+CREATE TYPE logistics_service.shipping_method_type_enum AS ENUM ('COURIER', 'PICKUP', 'POSTAMAT');
 
-CREATE TYPE warehouse_location_type_enum AS ENUM ('SHELF', 'PALLET', 'FLOOR', 'BIN');
-CREATE TYPE inventory_item_status_enum AS ENUM ('AVAILABLE', 'RESERVED', 'QUARANTINE', 'DAMAGED');
-CREATE TYPE stock_movement_type_enum AS ENUM ('RECEIVE', 'PICK', 'SHIP', 'TRANSFER', 'ADJUSTMENT_IN', 'ADJUSTMENT_OUT');
-CREATE TYPE inbound_status_enum AS ENUM ('PLANNED', 'IN_TRANSIT', 'RECEIVED_PARTIAL', 'RECEIVED_COMPLETED', 'CANCELLED');
-CREATE TYPE picking_task_status_enum AS ENUM ('NEW', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED');
-CREATE TYPE outbound_status_enum AS ENUM ('PENDING_PICKING', 'READY_FOR_DISPATCH', 'DISPATCHED', 'DELIVERED');
-CREATE TYPE stocktake_status_enum AS ENUM ('PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED');
-CREATE TYPE stocktake_type_enum AS ENUM ('FULL', 'CYCLE_COUNT');
+CREATE TYPE wms_service.warehouse_location_type_enum AS ENUM ('SHELF', 'PALLET', 'FLOOR', 'BIN');
+CREATE TYPE wms_service.inventory_item_status_enum AS ENUM ('AVAILABLE', 'RESERVED', 'QUARANTINE', 'DAMAGED');
+CREATE TYPE wms_service.stock_movement_type_enum AS ENUM ('RECEIVE', 'PICK', 'SHIP', 'TRANSFER', 'ADJUSTMENT_IN', 'ADJUSTMENT_OUT');
+CREATE TYPE wms_service.inbound_status_enum AS ENUM ('PLANNED', 'IN_TRANSIT', 'RECEIVED_PARTIAL', 'RECEIVED_COMPLETED', 'CANCELLED');
+CREATE TYPE wms_service.picking_task_status_enum AS ENUM ('NEW', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED');
+CREATE TYPE wms_service.outbound_status_enum AS ENUM ('PENDING_PICKING', 'READY_FOR_DISPATCH', 'DISPATCHED', 'DELIVERED');
+CREATE TYPE wms_service.stocktake_status_enum AS ENUM ('PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED');
+CREATE TYPE wms_service.stocktake_type_enum AS ENUM ('FULL', 'CYCLE_COUNT');
 
-CREATE TYPE moderation_item_type_enum AS ENUM ('PRODUCT', 'REVIEW', 'SELLER', 'USER', 'COMPLAINT');
-CREATE TYPE moderation_status_enum AS ENUM ('PENDING', 'IN_REVIEW', 'APPROVED', 'REJECTED', 'ACTION_TAKEN');
-CREATE TYPE platform_setting_value_type_enum AS ENUM ('STRING', 'NUMBER', 'BOOLEAN', 'JSON');
-CREATE TYPE seller_status_enum AS ENUM ('PENDING_APPROVAL', 'ACTIVE', 'BLOCKED', 'SUSPENDED');
-CREATE TYPE seller_staff_role_enum AS ENUM ('MANAGER', 'PRODUCT_EDITOR', 'ORDER_PROCESSOR', 'FINANCIER', 'MESSENGER');
-CREATE TYPE promotion_discount_type_enum AS ENUM ('PERCENTAGE', 'FIXED_AMOUNT', 'FREE_SHIPPING');
-CREATE TYPE qa_question_status_enum AS ENUM ('PENDING_ANSWER', 'ANSWERED', 'HIDDEN');
-CREATE TYPE qa_responder_type_enum AS ENUM ('USER', 'SELLER', 'ADMIN');
-CREATE TYPE chat_participant_type_enum AS ENUM ('USER', 'SELLER', 'ADMIN');
-CREATE TYPE product_status_enum AS ENUM ('ACTIVE', 'DRAFT', 'PENDING_MODERATION', 'REJECTED', 'ARCHIVED');
-CREATE TYPE auth_two_factor_method_enum AS ENUM ('TOTP', 'SMS', 'EMAIL');
-CREATE TYPE auth_login_status_enum AS ENUM ('SUCCESS', 'FAILED');
+CREATE TYPE admin_service.moderation_item_type_enum AS ENUM ('PRODUCT', 'REVIEW', 'SELLER', 'USER', 'COMPLAINT');
+CREATE TYPE admin_service.moderation_status_enum AS ENUM ('PENDING', 'IN_REVIEW', 'APPROVED', 'REJECTED', 'ACTION_TAKEN');
+CREATE TYPE admin_service.platform_setting_value_type_enum AS ENUM ('STRING', 'NUMBER', 'BOOLEAN', 'JSON');
+CREATE TYPE seller_service.seller_status_enum AS ENUM ('PENDING_APPROVAL', 'ACTIVE', 'BLOCKED', 'SUSPENDED');
+CREATE TYPE seller_service.seller_staff_role_enum AS ENUM ('MANAGER', 'PRODUCT_EDITOR', 'ORDER_PROCESSOR', 'FINANCIER', 'MESSENGER');
+CREATE TYPE promotion_service.promotion_discount_type_enum AS ENUM ('PERCENTAGE', 'FIXED_AMOUNT', 'FREE_SHIPPING');
+CREATE TYPE qa_service.qa_question_status_enum AS ENUM ('PENDING_ANSWER', 'ANSWERED', 'HIDDEN');
+CREATE TYPE qa_service.qa_responder_type_enum AS ENUM ('USER', 'SELLER', 'ADMIN');
+CREATE TYPE messaging_service.chat_participant_type_enum AS ENUM ('USER', 'SELLER', 'ADMIN');
+CREATE TYPE product_service.product_status_enum AS ENUM ('ACTIVE', 'DRAFT', 'PENDING_MODERATION', 'REJECTED', 'ARCHIVED');
+CREATE TYPE auth_service.auth_two_factor_method_enum AS ENUM ('TOTP', 'SMS', 'EMAIL');
+CREATE TYPE auth_service.auth_login_status_enum AS ENUM ('SUCCESS', 'FAILED');
 ```
 
 -----
@@ -64,16 +87,16 @@ CREATE TYPE auth_login_status_enum AS ENUM ('SUCCESS', 'FAILED');
 
 ```sql
 -- Таблица для пользователей
-CREATE TABLE users (
+CREATE TABLE user_service.users (
     user_id BIGSERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     phone_number VARCHAR(50) UNIQUE,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     date_of_birth DATE,
-    gender gender_enum,
+    gender user_service.gender_enum,
     avatar_url TEXT,
-    status user_status_enum NOT NULL DEFAULT 'PENDING_VERIFICATION',
+    status user_service.user_status_enum NOT NULL DEFAULT 'PENDING_VERIFICATION',
     last_activity_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(255),
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -82,7 +105,7 @@ CREATE TABLE users (
 );
 
 -- Таблица для адресов пользователей
-CREATE TABLE user_addresses (
+CREATE TABLE user_service.user_addresses (
     address_id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
     label VARCHAR(100) NOT NULL,
@@ -98,11 +121,11 @@ CREATE TABLE user_addresses (
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES user_service.users(user_id) ON DELETE CASCADE
 );
 
 -- Таблица для избранных товаров
-CREATE TABLE favorite_products (
+CREATE TABLE user_service.favorite_products (
     favorite_id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
     product_id BIGINT NOT NULL, -- Logical FK to product_db.products(product_id)
@@ -111,7 +134,7 @@ CREATE TABLE favorite_products (
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (user_id, product_id), -- Пользователь может добавить один товар в избранное только один раз
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES user_service.users(user_id) ON DELETE CASCADE
 );
 ```
 
@@ -121,7 +144,7 @@ CREATE TABLE favorite_products (
 
 ```sql
 -- Таблица для учетных данных пользователя
-CREATE TABLE user_credentials (
+CREATE TABLE auth_service.user_credentials (
     user_id BIGINT PRIMARY KEY, -- Logical FK to user_db.users(user_id)
     password_hash TEXT NOT NULL,
     email_verified BOOLEAN DEFAULT FALSE,
@@ -133,7 +156,7 @@ CREATE TABLE user_credentials (
 );
 
 -- Таблица для сессий пользователя
-CREATE TABLE user_sessions (
+CREATE TABLE auth_service.user_sessions (
     session_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id BIGINT NOT NULL, -- Logical FK to user_db.users(user_id)
     jwt_token TEXT, -- Optional: if session tokens are managed server-side
@@ -149,10 +172,10 @@ CREATE TABLE user_sessions (
 );
 
 -- Таблица для настроек двухфакторной аутентификации
-CREATE TABLE two_factor_auth_settings (
+CREATE TABLE auth_service.two_factor_auth_settings (
     user_id BIGINT PRIMARY KEY, -- Logical FK to user_db.users(user_id)
     is_enabled BOOLEAN DEFAULT FALSE NOT NULL,
-    method auth_two_factor_method_enum,
+    method auth_service.auth_two_factor_method_enum,
     totp_secret VARCHAR(255),
     sms_code_last_sent_at TIMESTAMP WITH TIME ZONE,
     email_code_last_sent_at TIMESTAMP WITH TIME ZONE,
@@ -163,13 +186,13 @@ CREATE TABLE two_factor_auth_settings (
 );
 
 -- Таблица для истории входов
-CREATE TABLE login_history (
+CREATE TABLE auth_service.login_history (
     entry_id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL, -- Logical FK to user_db.users(user_id)
     login_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     ip_address INET NOT NULL,
     device_info TEXT,
-    status auth_login_status_enum NOT NULL
+    status auth_service.auth_login_status_enum NOT NULL
 );
 ```
 
@@ -179,7 +202,7 @@ CREATE TABLE login_history (
 
 ```sql
 -- Таблица для категорий товаров
-CREATE TABLE categories (
+CREATE TABLE product_service.categories (
     category_id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     parent_id BIGINT,
@@ -189,11 +212,11 @@ CREATE TABLE categories (
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (parent_id) REFERENCES categories(category_id) ON DELETE SET NULL
+    FOREIGN KEY (parent_id) REFERENCES product_service.categories(category_id) ON DELETE SET NULL
 );
 
 -- Таблица для брендов
-CREATE TABLE brands (
+CREATE TABLE product_service.brands (
     brand_id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) UNIQUE NOT NULL,
     logo_url TEXT,
@@ -205,7 +228,7 @@ CREATE TABLE brands (
 );
 
 -- Таблица для товаров
-CREATE TABLE products (
+CREATE TABLE product_service.products (
     product_id BIGSERIAL PRIMARY KEY,
     seller_id BIGINT NOT NULL, -- Logical FK to seller_db.sellers(seller_id)
     name VARCHAR(255) NOT NULL,
@@ -214,19 +237,19 @@ CREATE TABLE products (
     base_price NUMERIC(10, 2) NOT NULL CHECK (base_price >= 0),
     category_id BIGINT NOT NULL,
     brand_id BIGINT,
-    status product_status_enum NOT NULL DEFAULT 'DRAFT',
+    status product_service.product_status_enum NOT NULL DEFAULT 'DRAFT',
     main_image_url TEXT NOT NULL,
     moderated_at TIMESTAMP WITH TIME ZONE,
     created_by VARCHAR(255),
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE RESTRICT,
-    FOREIGN KEY (brand_id) REFERENCES brands(brand_id) ON DELETE SET NULL
+    FOREIGN KEY (category_id) REFERENCES product_service.categories(category_id) ON DELETE RESTRICT,
+    FOREIGN KEY (brand_id) REFERENCES product_service.brands(brand_id) ON DELETE SET NULL
 );
 
 -- Таблица для изображений товаров
-CREATE TABLE product_images (
+CREATE TABLE product_service.product_images (
     image_id BIGSERIAL PRIMARY KEY,
     product_id BIGINT NOT NULL,
     url TEXT NOT NULL,
@@ -236,11 +259,11 @@ CREATE TABLE product_images (
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
+    FOREIGN KEY (product_id) REFERENCES product_service.products(product_id) ON DELETE CASCADE
 );
 
 -- Таблица для вариантов товаров
-CREATE TABLE product_variants (
+CREATE TABLE product_service.product_variants (
     variant_id BIGSERIAL PRIMARY KEY,
     product_id BIGINT NOT NULL,
     sku_code VARCHAR(100) UNIQUE NOT NULL,
@@ -253,7 +276,7 @@ CREATE TABLE product_variants (
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
+    FOREIGN KEY (product_id) REFERENCES product_service.products(product_id) ON DELETE CASCADE
 );
 ```
 
@@ -263,17 +286,17 @@ CREATE TABLE product_variants (
 
 ```sql
 -- Таблица для заказов
-CREATE TABLE orders (
+CREATE TABLE order_service.orders (
     order_id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL, -- Logical FK to user_db.users(user_id)
     seller_id BIGINT NOT NULL, -- Logical FK to seller_db.sellers(seller_id)
-    status order_status_enum NOT NULL DEFAULT 'PENDING',
+    status order_service.order_status_enum NOT NULL DEFAULT 'PENDING',
     total_amount NUMERIC(10, 2) NOT NULL CHECK (total_amount >= 0),
     discount_amount NUMERIC(10, 2) DEFAULT 0 CHECK (discount_amount >= 0),
     shipping_cost NUMERIC(10, 2) DEFAULT 0 CHECK (shipping_cost >= 0),
     shipping_address_json JSONB NOT NULL, -- Snapshot of address for historical purposes
     payment_method_id BIGINT, -- Logical FK to payment_db.saved_payment_methods(method_id)
-    payment_status payment_status_enum NOT NULL DEFAULT 'PENDING',
+    payment_status payment_service.payment_status_enum NOT NULL DEFAULT 'PENDING',
     shipping_method_id BIGINT NOT NULL, -- Logical FK to logistics_db.shipping_methods(method_id)
     tracking_number VARCHAR(255), -- From Logistics Service
     order_type VARCHAR(50) NOT NULL, -- e.g., 'FBO', 'FBS_SELLER_DELIVERY', 'FBS_MARKETPLACE_DELIVERY'
@@ -286,7 +309,7 @@ CREATE TABLE orders (
 );
 
 -- Таблица для позиций заказа
-CREATE TABLE order_items (
+CREATE TABLE order_service.order_items (
     order_item_id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL,
     product_id BIGINT NOT NULL, -- Logical FK to product_db.products(product_id)
@@ -300,17 +323,17 @@ CREATE TABLE order_items (
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE
+    FOREIGN KEY (order_id) REFERENCES order_service.orders(order_id) ON DELETE CASCADE
 );
 
 -- Таблица для истории статусов заказа
-CREATE TABLE order_status_history (
+CREATE TABLE order_service.order_status_history (
     history_id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL,
-    status order_status_enum NOT NULL,
+    status order_service.order_status_enum NOT NULL,
     changed_by_user_id BIGINT, -- Logical FK to user_db.users(user_id) or admin_db.admin_users(admin_id)
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE
+    FOREIGN KEY (order_id) REFERENCES order_service.orders(order_id) ON DELETE CASCADE
 );
 ```
 
@@ -320,7 +343,7 @@ CREATE TABLE order_status_history (
 
 ```sql
 -- Таблица для отзывов
-CREATE TABLE reviews (
+CREATE TABLE review_service.reviews (
     review_id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL, -- Logical FK to user_db.users(user_id)
     product_id BIGINT NOT NULL, -- Logical FK to product_db.products(product_id)
@@ -328,7 +351,7 @@ CREATE TABLE reviews (
     rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
     comment TEXT,
     is_anonymous BOOLEAN DEFAULT FALSE,
-    status review_status_enum NOT NULL DEFAULT 'PENDING_MODERATION',
+    status review_service.review_status_enum NOT NULL DEFAULT 'PENDING_MODERATION',
     created_by VARCHAR(255),
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
@@ -336,7 +359,7 @@ CREATE TABLE reviews (
 );
 
 -- Таблица для изображений отзывов
-CREATE TABLE review_images (
+CREATE TABLE review_service.review_images (
     image_id BIGSERIAL PRIMARY KEY,
     review_id BIGINT NOT NULL,
     url TEXT NOT NULL,
@@ -344,11 +367,11 @@ CREATE TABLE review_images (
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (review_id) REFERENCES reviews(review_id) ON DELETE CASCADE
+    FOREIGN KEY (review_id) REFERENCES review_service.reviews(review_id) ON DELETE CASCADE
 );
 
 -- Таблица для ответов продавца на отзывы
-CREATE TABLE seller_replies (
+CREATE TABLE review_service.seller_replies (
     reply_id BIGSERIAL PRIMARY KEY,
     review_id BIGINT NOT NULL,
     seller_id BIGINT NOT NULL, -- Logical FK to seller_db.sellers(seller_id)
@@ -357,7 +380,7 @@ CREATE TABLE seller_replies (
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (review_id) REFERENCES reviews(review_id) ON DELETE CASCADE
+    FOREIGN KEY (review_id) REFERENCES review_service.reviews(review_id) ON DELETE CASCADE
 );
 ```
 
@@ -367,15 +390,15 @@ CREATE TABLE seller_replies (
 
 ```sql
 -- Таблица для платежных транзакций
-CREATE TABLE payment_transactions (
+CREATE TABLE payment_service.payment_transactions (
     transaction_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id BIGINT, -- Logical FK to order_db.orders(order_id)
     user_id BIGINT NOT NULL, -- Logical FK to user_db.users(user_id)
     amount NUMERIC(10, 2) NOT NULL CHECK (amount >= 0),
     currency VARCHAR(10) NOT NULL,
-    status payment_status_enum NOT NULL DEFAULT 'PENDING',
+    status payment_service.payment_status_enum NOT NULL DEFAULT 'PENDING',
     gateway_transaction_id VARCHAR(255) UNIQUE, -- ID от платежного провайдера
-    payment_method_type payment_method_type_enum NOT NULL,
+    payment_method_type payment_service.payment_method_type_enum NOT NULL,
     error_message TEXT,
     processed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(255),
@@ -385,7 +408,7 @@ CREATE TABLE payment_transactions (
 );
 
 -- Таблица для сохраненных способов оплаты
-CREATE TABLE saved_payment_methods (
+CREATE TABLE payment_service.saved_payment_methods (
     method_id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL, -- Logical FK to user_db.users(user_id)
     type VARCHAR(50) NOT NULL, -- e.g., 'CARD'
@@ -403,11 +426,11 @@ CREATE TABLE saved_payment_methods (
 );
 
 -- Таблица для запросов на выплату продавцу
-CREATE TABLE payout_requests (
+CREATE TABLE payment_service.payout_requests (
     payout_id BIGSERIAL PRIMARY KEY,
     seller_id BIGINT NOT NULL, -- Logical FK to seller_db.sellers(seller_id)
     amount NUMERIC(10, 2) NOT NULL CHECK (amount > 0),
-    status payment_status_enum NOT NULL DEFAULT 'PENDING',
+    status payment_service.payment_status_enum NOT NULL DEFAULT 'PENDING',
     processed_at TIMESTAMP WITH TIME ZONE,
     transaction_id VARCHAR(255), -- ID транзакции выплаты в банке/системе
     notes TEXT,
@@ -424,10 +447,10 @@ CREATE TABLE payout_requests (
 
 ```sql
 -- Таблица для уведомлений
-CREATE TABLE notifications (
+CREATE TABLE notification_service.notifications (
     notification_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id BIGINT NOT NULL, -- Logical FK to user_db.users(user_id)
-    type notification_type_enum NOT NULL,
+    type notification_service.notification_type_enum NOT NULL,
     message_text TEXT NOT NULL,
     link_url TEXT,
     is_read BOOLEAN DEFAULT FALSE,
@@ -439,7 +462,7 @@ CREATE TABLE notifications (
 );
 
 -- Таблица для настроек уведомлений пользователя
-CREATE TABLE notification_settings (
+CREATE TABLE notification_service.notification_settings (
     user_id BIGINT PRIMARY KEY, -- Logical FK to user_db.users(user_id)
     email_enabled BOOLEAN DEFAULT TRUE,
     sms_enabled BOOLEAN DEFAULT FALSE,
@@ -462,7 +485,7 @@ CREATE TABLE notification_settings (
 
 ```sql
 -- Таблица для служб доставки
-CREATE TABLE shipping_carriers (
+CREATE TABLE logistics_service.shipping_carriers (
     carrier_id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) UNIQUE NOT NULL,
     tracking_url_pattern TEXT,
@@ -471,11 +494,12 @@ CREATE TABLE shipping_carriers (
     created_by VARCHAR(255),
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
-    last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (carrier_id) REFERENCES logistics_service.shipping_carriers(carrier_id) ON DELETE SET NULL
 );
 
 -- Таблица для способов доставки
-CREATE TABLE shipping_methods (
+CREATE TABLE logistics_service.shipping_methods (
     method_id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
@@ -489,11 +513,11 @@ CREATE TABLE shipping_methods (
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (carrier_id) REFERENCES shipping_carriers(carrier_id) ON DELETE SET NULL
+    FOREIGN KEY (carrier_id) REFERENCES logistics_service.shipping_carriers(carrier_id) ON DELETE SET NULL
 );
 
 -- Таблица для пунктов выдачи
-CREATE TABLE pickup_points (
+CREATE TABLE logistics_service.pickup_points (
     point_id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     address VARCHAR(255) NOT NULL,
@@ -515,7 +539,7 @@ CREATE TABLE pickup_points (
 
 ```sql
 -- Таблица для складов
-CREATE TABLE warehouses (
+CREATE TABLE wms_service.warehouses (
     warehouse_id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) UNIQUE NOT NULL,
     address TEXT NOT NULL,
@@ -528,11 +552,11 @@ CREATE TABLE warehouses (
 );
 
 -- Таблица для мест хранения (ячеек)
-CREATE TABLE locations (
+CREATE TABLE wms_service.locations (
     location_id BIGSERIAL PRIMARY KEY,
     warehouse_id BIGINT NOT NULL,
     code VARCHAR(100) NOT NULL, -- e.g., "A-01-01"
-    type warehouse_location_type_enum NOT NULL,
+    type wms_service.warehouse_location_type_enum NOT NULL,
     max_capacity_units INTEGER,
     is_active BOOLEAN DEFAULT TRUE,
     created_by VARCHAR(255),
@@ -540,11 +564,11 @@ CREATE TABLE locations (
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (warehouse_id, code), -- Unique location code per warehouse
-    FOREIGN KEY (warehouse_id) REFERENCES warehouses(warehouse_id) ON DELETE CASCADE
+    FOREIGN KEY (warehouse_id) REFERENCES wms_service.warehouses(warehouse_id) ON DELETE CASCADE
 );
 
 -- Таблица для складских позиций (инвентаря)
-CREATE TABLE inventory_items (
+CREATE TABLE wms_service.inventory_items (
     inventory_item_id BIGSERIAL PRIMARY KEY,
     sku_code VARCHAR(100) NOT NULL, -- Logical FK to product_db.product_variants(sku_code)
     warehouse_id BIGINT NOT NULL,
@@ -553,25 +577,25 @@ CREATE TABLE inventory_items (
     batch_number VARCHAR(255),
     expiration_date DATE,
     seller_id BIGINT NOT NULL, -- Logical FK to seller_db.sellers(seller_id)
-    status inventory_item_status_enum NOT NULL DEFAULT 'AVAILABLE',
+    status wms_service.inventory_item_status_enum NOT NULL DEFAULT 'AVAILABLE',
     created_by VARCHAR(255),
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (sku_code, location_id, batch_number), -- A specific SKU/batch can only be in one location (or multiple if no batch)
-    FOREIGN KEY (warehouse_id) REFERENCES warehouses(warehouse_id) ON DELETE CASCADE,
-    FOREIGN KEY (location_id) REFERENCES locations(location_id) ON DELETE RESTRICT
+    FOREIGN KEY (warehouse_id) REFERENCES wms_service.warehouses(warehouse_id) ON DELETE CASCADE,
+    FOREIGN KEY (location_id) REFERENCES wms_service.locations(location_id) ON DELETE RESTRICT
 );
 
 -- Таблица для движений запасов
-CREATE TABLE stock_movements (
+CREATE TABLE wms_service.stock_movements (
     movement_id BIGSERIAL PRIMARY KEY,
     inventory_item_id BIGINT, -- Optional: if specific item is tracked
     sku_code VARCHAR(100) NOT NULL, -- Logical FK to product_db.product_variants(sku_code)
     quantity INTEGER NOT NULL,
     from_location_id BIGINT,
     to_location_id BIGINT,
-    movement_type stock_movement_type_enum NOT NULL,
+    movement_type wms_service.stock_movement_type_enum NOT NULL,
     reference_document_id BIGINT, -- e.g., order_id, inbound_id, stocktake_id
     reference_document_type VARCHAR(50), -- e.g., 'ORDER', 'INBOUND', 'STOCKTAKE'
     user_id BIGINT NOT NULL, -- Logical FK to user_db.users(user_id) or admin_db.admin_users(admin_id)
@@ -579,16 +603,16 @@ CREATE TABLE stock_movements (
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (from_location_id) REFERENCES locations(location_id) ON DELETE SET NULL,
-    FOREIGN KEY (to_location_id) REFERENCES locations(location_id) ON DELETE SET NULL
+    FOREIGN KEY (from_location_id) REFERENCES wms_service.locations(location_id) ON DELETE SET NULL,
+    FOREIGN KEY (to_location_id) REFERENCES wms_service.locations(location_id) ON DELETE SET NULL
 );
 
 -- Таблица для входящих поставок
-CREATE TABLE inbound_shipments (
+CREATE TABLE wms_service.inbound_shipments (
     inbound_id BIGSERIAL PRIMARY KEY,
     seller_id BIGINT NOT NULL, -- Logical FK to seller_db.sellers(seller_id)
     warehouse_id BIGINT NOT NULL,
-    status inbound_status_enum NOT NULL DEFAULT 'PLANNED',
+    status wms_service.inbound_status_enum NOT NULL DEFAULT 'PLANNED',
     expected_arrival_date DATE NOT NULL,
     actual_arrival_date TIMESTAMP WITH TIME ZONE,
     notes TEXT,
@@ -596,11 +620,11 @@ CREATE TABLE inbound_shipments (
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (warehouse_id) REFERENCES warehouses(warehouse_id) ON DELETE RESTRICT
+    FOREIGN KEY (warehouse_id) REFERENCES wms_service.warehouses(warehouse_id) ON DELETE RESTRICT
 );
 
 -- Таблица для позиций входящей поставки
-CREATE TABLE inbound_items (
+CREATE TABLE wms_service.inbound_items (
     inbound_item_id BIGSERIAL PRIMARY KEY,
     inbound_id BIGINT NOT NULL,
     sku_code VARCHAR(100) NOT NULL, -- Logical FK to product_db.product_variants(sku_code)
@@ -610,27 +634,27 @@ CREATE TABLE inbound_items (
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (inbound_id) REFERENCES inbound_shipments(inbound_id) ON DELETE CASCADE
+    FOREIGN KEY (inbound_id) REFERENCES wms_service.inbound_shipments(inbound_id) ON DELETE CASCADE
 );
 
 -- Таблица для заданий на отбор
-CREATE TABLE picking_tasks (
+CREATE TABLE wms_service.picking_tasks (
     task_id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL, -- Logical FK to order_db.orders(order_id)
     warehouse_id BIGINT NOT NULL,
     picker_user_id BIGINT, -- Logical FK to user_db.users(user_id) (WMS operator)
-    status picking_task_status_enum NOT NULL DEFAULT 'NEW',
+    status wms_service.picking_task_status_enum NOT NULL DEFAULT 'NEW',
     assigned_at TIMESTAMP WITH TIME ZONE,
     completed_at TIMESTAMP WITH TIME ZONE,
     created_by VARCHAR(255),
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (warehouse_id) REFERENCES warehouses(warehouse_id) ON DELETE RESTRICT
+    FOREIGN KEY (warehouse_id) REFERENCES wms_service.warehouses(warehouse_id) ON DELETE RESTRICT
 );
 
 -- Таблица для позиций задания на отбор
-CREATE TABLE picking_task_items (
+CREATE TABLE wms_service.picking_task_items (
     task_item_id BIGSERIAL PRIMARY KEY,
     task_id BIGINT NOT NULL,
     sku_code VARCHAR(100) NOT NULL, -- Logical FK to product_db.product_variants(sku_code)
@@ -641,16 +665,16 @@ CREATE TABLE picking_task_items (
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (task_id) REFERENCES picking_tasks(task_id) ON DELETE CASCADE,
-    FOREIGN KEY (source_location_id) REFERENCES locations(location_id) ON DELETE SET NULL
+    FOREIGN KEY (task_id) REFERENCES wms_service.picking_tasks(task_id) ON DELETE CASCADE,
+    FOREIGN KEY (source_location_id) REFERENCES wms_service.locations(location_id) ON DELETE SET NULL
 );
 
 -- Таблица для исходящих отгрузок
-CREATE TABLE outbound_shipments (
+CREATE TABLE wms_service.outbound_shipments (
     outbound_id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL, -- Logical FK to order_db.orders(order_id)
     warehouse_id BIGINT NOT NULL,
-    status outbound_status_enum NOT NULL DEFAULT 'PENDING_PICKING',
+    status wms_service.outbound_status_enum NOT NULL DEFAULT 'PENDING_PICKING',
     carrier_id BIGINT, -- Logical FK to logistics_db.shipping_carriers(carrier_id)
     tracking_number VARCHAR(255),
     dispatch_at TIMESTAMP WITH TIME ZONE,
@@ -658,15 +682,15 @@ CREATE TABLE outbound_shipments (
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (warehouse_id) REFERENCES warehouses(warehouse_id) ON DELETE RESTRICT
+    FOREIGN KEY (warehouse_id) REFERENCES wms_service.warehouses(warehouse_id) ON DELETE RESTRICT
 );
 
 -- Таблица для инвентаризаций
-CREATE TABLE stocktakes (
+CREATE TABLE wms_service.stocktakes (
     stocktake_id BIGSERIAL PRIMARY KEY,
     warehouse_id BIGINT NOT NULL,
-    type stocktake_type_enum NOT NULL,
-    status stocktake_status_enum NOT NULL DEFAULT 'PLANNED',
+    type wms_service.stocktake_type_enum NOT NULL,
+    status wms_service.stocktake_status_enum NOT NULL DEFAULT 'PLANNED',
     start_date DATE NOT NULL,
     end_date DATE,
     initiated_by_user_id BIGINT NOT NULL, -- Logical FK to user_db.users(user_id) (WMS operator)
@@ -674,11 +698,11 @@ CREATE TABLE stocktakes (
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (warehouse_id) REFERENCES warehouses(warehouse_id) ON DELETE RESTRICT
+    FOREIGN KEY (warehouse_id) REFERENCES wms_service.warehouses(warehouse_id) ON DELETE RESTRICT
 );
 
 -- Таблица для позиций инвентаризации
-CREATE TABLE stocktake_items (
+CREATE TABLE wms_service.stocktake_items (
     stocktake_item_id BIGSERIAL PRIMARY KEY,
     stocktake_id BIGINT NOT NULL,
     sku_code VARCHAR(100) NOT NULL, -- Logical FK to product_db.product_variants(sku_code)
@@ -690,12 +714,12 @@ CREATE TABLE stocktake_items (
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (stocktake_id) REFERENCES stocktakes(stocktake_id) ON DELETE CASCADE,
-    FOREIGN KEY (location_id) REFERENCES locations(location_id) ON DELETE SET NULL
+    FOREIGN KEY (stocktake_id) REFERENCES wms_service.stocktakes(stocktake_id) ON DELETE CASCADE,
+    FOREIGN KEY (location_id) REFERENCES wms_service.locations(location_id) ON DELETE SET NULL
 );
 
 -- Таблица для внутренних перемещений
-CREATE TABLE transfers (
+CREATE TABLE wms_service.transfers (
     transfer_id BIGSERIAL PRIMARY KEY,
     sku_code VARCHAR(100) NOT NULL, -- Logical FK to product_db.product_variants(sku_code)
     quantity INTEGER NOT NULL CHECK (quantity > 0),
@@ -708,8 +732,8 @@ CREATE TABLE transfers (
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (from_location_id) REFERENCES locations(location_id) ON DELETE RESTRICT,
-    FOREIGN KEY (to_location_id) REFERENCES locations(location_id) ON DELETE RESTRICT
+    FOREIGN KEY (from_location_id) REFERENCES wms_service.locations(location_id) ON DELETE RESTRICT,
+    FOREIGN KEY (to_location_id) REFERENCES wms_service.locations(location_id) ON DELETE RESTRICT
 );
 ```
 
@@ -719,7 +743,7 @@ CREATE TABLE transfers (
 
 ```sql
 -- Таблица для администраторов системы
-CREATE TABLE admin_users (
+CREATE TABLE admin_service.admin_users (
     admin_id BIGSERIAL PRIMARY KEY,
     user_id BIGINT, -- Logical FK to user_db.users(user_id) (if admin is also a user)
     username VARCHAR(100) UNIQUE NOT NULL,
@@ -733,11 +757,11 @@ CREATE TABLE admin_users (
 );
 
 -- Таблица для настроек платформы
-CREATE TABLE platform_settings (
+CREATE TABLE admin_service.platform_settings (
     setting_id BIGSERIAL PRIMARY KEY,
     setting_key VARCHAR(255) UNIQUE NOT NULL,
     setting_value TEXT NOT NULL,
-    value_type platform_setting_value_type_enum NOT NULL,
+    value_type admin_service.platform_setting_value_type_enum NOT NULL,
     description TEXT,
     created_by VARCHAR(255),
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -746,12 +770,12 @@ CREATE TABLE platform_settings (
 );
 
 -- Таблица для элементов модерации (жалоб, флагов)
-CREATE TABLE moderation_items (
+CREATE TABLE admin_service.moderation_items (
     moderation_item_id BIGSERIAL PRIMARY KEY,
-    item_type moderation_item_type_enum NOT NULL,
+    item_type admin_service.moderation_item_type_enum NOT NULL,
     item_id BIGINT NOT NULL, -- ID of the item being moderated (product, review, user, etc.)
     reason TEXT NOT NULL,
-    status moderation_status_enum NOT NULL DEFAULT 'PENDING',
+    status admin_service.moderation_status_enum NOT NULL DEFAULT 'PENDING',
     assigned_to_admin_id BIGINT,
     resolved_at TIMESTAMP WITH TIME ZONE,
     notes TEXT,
@@ -759,11 +783,11 @@ CREATE TABLE moderation_items (
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (assigned_to_admin_id) REFERENCES admin_users(admin_id) ON DELETE SET NULL
+    FOREIGN KEY (assigned_to_admin_id) REFERENCES admin_service.admin_users(admin_id) ON DELETE SET NULL
 );
 
 -- Таблица для журнала активности администраторов
-CREATE TABLE admin_activity_logs (
+CREATE TABLE admin_service.admin_activity_logs (
     log_id BIGSERIAL PRIMARY KEY,
     admin_user_id BIGINT NOT NULL,
     action TEXT NOT NULL,
@@ -771,7 +795,7 @@ CREATE TABLE admin_activity_logs (
     resource_id BIGINT,
     ip_address INET,
     timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (admin_user_id) REFERENCES admin_users(admin_id) ON DELETE CASCADE
+    FOREIGN KEY (admin_user_id) REFERENCES admin_service.admin_users(admin_id) ON DELETE CASCADE
 );
 ```
 
@@ -781,13 +805,13 @@ CREATE TABLE admin_activity_logs (
 
 ```sql
 -- Таблица для продавцов
-CREATE TABLE sellers (
+CREATE TABLE seller_service.sellers (
     seller_id BIGSERIAL PRIMARY KEY,
     user_id BIGINT UNIQUE NOT NULL, -- Logical FK to user_db.users(user_id) - owner of the seller account
     shop_name VARCHAR(255) UNIQUE NOT NULL,
     description TEXT,
     logo_url TEXT,
-    status seller_status_enum NOT NULL DEFAULT 'PENDING_APPROVAL',
+    status seller_service.seller_status_enum NOT NULL DEFAULT 'PENDING_APPROVAL',
     commission_rate NUMERIC(5, 4) NOT NULL CHECK (commission_rate >= 0 AND commission_rate <= 1), -- e.g., 0.15 for 15%
     contact_email VARCHAR(255) NOT NULL,
     contact_phone VARCHAR(50),
@@ -800,18 +824,18 @@ CREATE TABLE sellers (
 );
 
 -- Таблица для сотрудников продавца
-CREATE TABLE seller_staff (
+CREATE TABLE seller_service.seller_staff (
     staff_id BIGSERIAL PRIMARY KEY,
     seller_id BIGINT NOT NULL,
     user_id BIGINT UNIQUE NOT NULL, -- Logical FK to user_db.users(user_id) - staff member's user account
-    role seller_staff_role_enum NOT NULL,
+    role seller_service.seller_staff_role_enum NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     accepted_at TIMESTAMP WITH TIME ZONE,
     created_by VARCHAR(255),
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (seller_id) REFERENCES sellers(seller_id) ON DELETE CASCADE
+    FOREIGN KEY (seller_id) REFERENCES seller_service.sellers(seller_id) ON DELETE CASCADE
 );
 ```
 
@@ -821,12 +845,12 @@ CREATE TABLE seller_staff (
 
 ```sql
 -- Таблица для акций и промокодов
-CREATE TABLE promotions (
+CREATE TABLE promotion_service.promotions (
     promotion_id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     code VARCHAR(100) UNIQUE, -- Promo code, if applicable
     description TEXT,
-    discount_type promotion_discount_type_enum NOT NULL,
+    discount_type promotion_service.promotion_discount_type_enum NOT NULL,
     discount_value NUMERIC(10, 2) NOT NULL CHECK (discount_value >= 0),
     start_date TIMESTAMP WITH TIME ZONE NOT NULL,
     end_date TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -845,7 +869,7 @@ CREATE TABLE promotions (
 );
 
 -- Таблица для учета использования акций пользователями
-CREATE TABLE user_promotion_usage (
+CREATE TABLE promotion_service.user_promotion_usage (
     usage_id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL, -- Logical FK to user_db.users(user_id)
     promotion_id BIGINT NOT NULL,
@@ -856,7 +880,7 @@ CREATE TABLE user_promotion_usage (
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (user_id, promotion_id), -- One entry per user per promotion
-    FOREIGN KEY (promotion_id) REFERENCES promotions(promotion_id) ON DELETE CASCADE
+    FOREIGN KEY (promotion_id) REFERENCES promotion_service.promotions(promotion_id) ON DELETE CASCADE
 );
 ```
 
@@ -866,12 +890,12 @@ CREATE TABLE user_promotion_usage (
 
 ```sql
 -- Таблица для вопросов к товарам
-CREATE TABLE questions (
+CREATE TABLE qa_service.questions (
     question_id BIGSERIAL PRIMARY KEY,
     product_id BIGINT NOT NULL, -- Logical FK to product_db.products(product_id)
     user_id BIGINT NOT NULL, -- Logical FK to user_db.users(user_id) (who asked)
     text TEXT NOT NULL,
-    status qa_question_status_enum NOT NULL DEFAULT 'PENDING_ANSWER',
+    status qa_service.qa_question_status_enum NOT NULL DEFAULT 'PENDING_ANSWER',
     created_by VARCHAR(255),
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
@@ -879,17 +903,17 @@ CREATE TABLE questions (
 );
 
 -- Таблица для ответов на вопросы
-CREATE TABLE answers (
+CREATE TABLE qa_service.answers (
     answer_id BIGSERIAL PRIMARY KEY,
     question_id BIGINT NOT NULL,
     responder_id BIGINT NOT NULL, -- Logical FK to user_db.users(user_id) / seller_db.sellers(seller_id) / admin_db.admin_users(admin_id)
-    responder_type qa_responder_type_enum NOT NULL,
+    responder_type qa_service.qa_responder_type_enum NOT NULL,
     text TEXT NOT NULL,
     created_by VARCHAR(255),
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (question_id) REFERENCES questions(question_id) ON DELETE CASCADE
+    FOREIGN KEY (question_id) REFERENCES qa_service.questions(question_id) ON DELETE CASCADE
 );
 ```
 
@@ -899,12 +923,12 @@ CREATE TABLE answers (
 
 ```sql
 -- Таблица для чат-бесед (диалогов)
-CREATE TABLE chat_conversations (
+CREATE TABLE messaging_service.chat_conversations (
     conversation_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     participant1_id BIGINT NOT NULL, -- Logical FK to user_db.users(user_id) or seller_db.sellers(seller_id) or admin_db.admin_users(admin_id)
-    participant1_type chat_participant_type_enum NOT NULL,
+    participant1_type messaging_service.chat_participant_type_enum NOT NULL,
     participant2_id BIGINT NOT NULL, -- Logical FK to user_db.users(user_id) or seller_db.sellers(seller_id) or admin_db.admin_users(admin_id)
-    participant2_type chat_participant_type_enum NOT NULL,
+    participant2_type messaging_service.chat_participant_type_enum NOT NULL,
     subject VARCHAR(255), -- Optional subject for the chat
     is_active BOOLEAN DEFAULT TRUE,
     created_by VARCHAR(255),
@@ -915,18 +939,18 @@ CREATE TABLE chat_conversations (
 );
 
 -- Таблица для сообщений в чате
-CREATE TABLE chat_messages (
+CREATE TABLE messaging_service.chat_messages (
     message_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     conversation_id UUID NOT NULL,
     sender_id BIGINT NOT NULL, -- Logical FK to user_db.users(user_id) or seller_db.sellers(seller_id) or admin_db.admin_users(admin_id)
-    sender_type chat_participant_type_enum NOT NULL,
+    sender_type messaging_service.chat_participant_type_enum NOT NULL,
     message_text TEXT NOT NULL,
     is_read_by_recipient BOOLEAN DEFAULT FALSE,
     created_by VARCHAR(255),
     created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified_by VARCHAR(255),
     last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (conversation_id) REFERENCES chat_conversations(conversation_id) ON DELETE CASCADE
+    FOREIGN KEY (conversation_id) REFERENCES messaging_service.chat_conversations(conversation_id) ON DELETE CASCADE
 );
 ```
 
@@ -938,7 +962,7 @@ CREATE TABLE chat_messages (
 
 ```sql
 -- Таблица для конфигурации поисковых индексов
-CREATE TABLE search_index_configs (
+CREATE TABLE search_service.search_index_configs (
     config_id BIGSERIAL PRIMARY KEY,
     index_name VARCHAR(255) UNIQUE NOT NULL,
     source_service VARCHAR(100) NOT NULL, -- Which microservice data is indexed from
@@ -952,7 +976,7 @@ CREATE TABLE search_index_configs (
 );
 
 -- Таблица для логов поисковых запросов
-CREATE TABLE search_query_logs (
+CREATE TABLE search_service.search_query_logs (
     log_id BIGSERIAL PRIMARY KEY,
     query_text VARCHAR(500) NOT NULL,
     user_id BIGINT, -- Logical FK to user_db.users(user_id)
@@ -963,3 +987,38 @@ CREATE TABLE search_query_logs (
 ```
 
 -----
+
+#### **16. Cart Service (База данных: `cart_db`)**
+
+```sql
+-- Таблица для корзин пользователей
+CREATE TABLE cart_service.carts (
+    cart_id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT, -- Logical FK to user_db.users(user_id). Nullable for anonymous carts.
+    session_id VARCHAR(255), -- Session ID for anonymous users
+    expires_at TIMESTAMP WITH TIME ZONE,
+    created_by VARCHAR(255),
+    created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    last_modified_by VARCHAR(255),
+    last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id), -- A user can only have one active cart
+    UNIQUE (session_id) -- A session can only have one active cart
+);
+
+-- Таблица для позиций в корзине
+CREATE TABLE cart_service.cart_items (
+    cart_item_id BIGSERIAL PRIMARY KEY,
+    cart_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL, -- Logical FK to product_db.products(product_id)
+    product_variant_id BIGINT, -- Logical FK to product_db.product_variants(variant_id)
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    price_at_add NUMERIC(10, 2) NOT NULL CHECK (price_at_add >= 0),
+    added_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(255),
+    created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    last_modified_by VARCHAR(255),
+    last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (cart_id) REFERENCES cart_service.carts(cart_id) ON DELETE CASCADE,
+    UNIQUE (cart_id, product_id, product_variant_id) -- A specific product/variant can only be once in a cart
+);
+```

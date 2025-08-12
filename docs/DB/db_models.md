@@ -156,7 +156,7 @@
     * `shipping_cost` (Decimal) - Стоимость доставки
     * `shipping_address_json` (JSONB) - Адрес доставки (копия данных из User Service для истории)
     * `payment_method_id` (BIGINT, nullable) - ID способа оплаты (внешний ключ к `Payment Service.PaymentMethod.method_id`) - **Не FK на уровне БД**
-    * `payment_status` (ENUM: 'PENDING', 'PAID', 'FAILED', 'REFUNDED')
+    * `payment_status` (ENUM: 'PENDING', 'PAID', 'FAILED', 'REFUNDED', 'AUTHORIZED')
     * `shipping_method_id` (BIGINT) - ID способа доставки (внешний ключ к `Logistics Service.ShippingMethod.method_id`) - **Не FK на уровне БД**
     * `tracking_number` (String, nullable) - Номер отслеживания (от Logistics Service)
     * `order_type` (ENUM: 'FBO', 'FBS_SELLER_DELIVERY', 'FBS_MARKETPLACE_DELIVERY')
@@ -603,6 +603,28 @@
     * `user_id` (BIGINT, nullable)
     * `results_count` (Integer)
     * `created_date` (Timestamp)
+
+---
+
+#### **16. Cart Service (Сервис Корзины)**
+*Управляет временными корзинами пользователей и их содержимым.*
+
+* **Сущность: `Cart` (Корзина)**
+    * `cart_id` (PK, UUID/BIGINT)
+    * `user_id` (FK, BIGINT, nullable) - Ссылка на `User Service.User.user_id`. Nullable для анонимных корзин.
+    * `session_id` (String, nullable) - ID сессии для анонимных пользователей.
+    * `expires_at` (Timestamp, nullable) - Время истечения срока действия корзины (для анонимных).
+    * *Наследует аудиторские поля*
+
+* **Сущность: `CartItem` (Позиция в корзине)**
+    * `cart_item_id` (PK, UUID/BIGINT)
+    * `cart_id` (FK, BIGINT) - Ссылка на `Cart.cart_id`
+    * `product_id` (BIGINT) - ID товара (внешний ключ к `Product Service.Product.product_id`)
+    * `product_variant_id` (BIGINT, nullable) - ID варианта товара (внешний ключ к `Product Service.ProductVariant.variant_id`)
+    * `quantity` (Integer) - Количество товара в корзине
+    * `price_at_add` (Decimal) - Цена товара на момент добавления в корзину (для истории)
+    * `added_at` (Timestamp) - Время добавления позиции
+    * *Наследует аудиторские поля*
 
 ---
 
