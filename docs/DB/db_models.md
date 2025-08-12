@@ -51,42 +51,111 @@
 ---
 
 #### **2. Auth Service (Сервис Аутентификации)**
-*Отвечает за аутентификацию, авторизацию, управление сессиями и 2FA. Хранит чувствительные данные для аутентификации.*
+*Отвечает за аутентификацию, авторизацию, управление сессиями, ролями, привилегиями и OAuth2-клиентами. Хранит чувствительные данные для аутентификации.*
 
-* **Сущность: `UserCredentials` (Учетные данные пользователя)**
-    * `user_id` (PK, BIGINT) - Ссылка на `User.user_id` (User Service)
-    * `password_hash` (String) - Хеш пароля
-    * `email_verified` (Boolean)
-    * `phone_verified` (Boolean)
-    * *Наследует аудиторские поля*
+*   **Схема БД:** `sso`
 
-* **Сущность: `UserSession` (Сессия пользователя)**
-    * `session_id` (PK, UUID/BIGINT)
-    * `user_id` (FK, BIGINT) - Ссылка на `User.user_id` (User Service)
-    * `jwt_token` (String) - JWT токен (может храниться для отзыва)
-    * `refresh_token` (String, UNIQUE) - Рефреш токен
-    * `device_info` (String, nullable) - Информация об устройстве (User-Agent)
-    * `ip_address` (String) - IP-адрес входа
-    * `expires_at` (Timestamp) - Время истечения сессии
-    * `is_active` (Boolean)
-    * *Наследует аудиторские поля*
+*   **Сущность: `User` (Пользователь)**
+    *   `user_id` (PK, UUID) - Уникальный идентификатор пользователя.
+    *   `email` (String, UNIQUE) - Электронная почта (логин пользователя).
+    *   `password_hash` (String) - Хеш пароля.
+    *   `first_name` (String) - Имя.
+    *   `last_name` (String) - Фамилия.
+    *   `middle_name` (String, nullable) - Отчество.
+    *   `birthday` (Date, nullable) - Дата рождения.
+    *   `active` (Boolean) - Флаг активности пользователя.
+    *   `avatar_file_id` (UUID, nullable) - ID файла аватарки в файловом хранилище.
+    *   `admin` (Boolean) - Является ли пользователь администратором.
+    *   `superuser` (Boolean) - Является ли пользователь суперпользователем (нельзя удалить).
+    *   *Наследует аудиторские поля (`created_by`, `created_date`, `last_updated_by`, `last_updated_date`, `object_version_number`)*
 
-* **Сущность: `TwoFactorAuthSetting` (Настройка 2FA)**
-    * `user_id` (PK, BIGINT) - Ссылка на `User.user_id` (User Service)
-    * `is_enabled` (Boolean)
-    * `method` (ENUM: 'TOTP', 'SMS', 'EMAIL', nullable) - Предпочитаемый метод 2FA
-    * `totp_secret` (String, nullable) - Секретный ключ для TOTP
-    * `sms_code_last_sent_at` (Timestamp, nullable)
-    * `email_code_last_sent_at` (Timestamp, nullable)
-    * *Наследует аудиторские поля*
+*   **Сущность: `SystemOAuth2Client` (OAuth2 Клиент Системы)**
+    *   `client_id` (PK, String) - ID клиента.
+    *   `client_secret` (String, nullable) - Секрет клиента.
+    *   `client_secret_expires_at` (Timestamp, nullable) - Срок действия секрета.
+    *   `client_name` (String) - Наименование клиента.
+    *   `client_authentication_methods` (Array of String) - Доступные методы аутентификации (например, `client_secret_basic`).
+    *   `authorization_grant_types` (Array of String) - Типы грантов авторизации (например, `authorization_code`, `client_credentials`).
+    *   `redirect_uris` (Array of String, nullable) - Доступные URL-ы перенаправления.
+    *   `scopes` (Array of String) - Области доступа (scopes).
+    *   `delete_notify_uris` (Array of String, nullable) - URL-ы для уведомления об удалении аккаунта.
+    *   *Наследует аудиторские поля*
+    *   **Примечание:** `system_oauth2_clients_v2` является обновленной версией этой сущности, использующей более гибкие типы данных (массивы).
 
-* **Сущность: `LoginHistory` (История входов)**
-    * `entry_id` (PK, UUID/BIGINT)
-    * `user_id` (FK, BIGINT) - Ссылка на `User.user_id` (User Service)
-    * `ip_address` (String)
-    * `device_info` (String, nullable)
-    * `status` (ENUM: 'SUCCESS', 'FAILED')
-    * `created_date` (Timestamp)
+*   **Сущность: `Authority` (Привилегия)**
+    *   `authority_id` (PK, UUID) - Уникальный идентификатор привилегии.
+    *   `authority_code` (String, UNIQUE с `system_code`) - Код привилегии.
+    *   `authority_description` (String) - Описание привилегии.
+    *   `system_code` (String) - Код системы, к которой принадлежит привилегия.
+    *   `active` (Boolean) - Флаг активности.
+    *   *Наследует аудиторские поля*
+
+*   **Сущность: `Role` (Роль)**
+    *   `role_id` (PK, UUID) - Уникальный идентификатор роли.
+    *   `role_code` (String, UNIQUE с `system_code`) - Код роли.
+    *   `role_description` (String) - Описание роли.
+    *   `system_code` (String, nullable) - Код системы, к которой принадлежит роль.
+    *   `active` (Boolean) - Флаг активности.
+    *   *Наследует аудиторские поля*
+
+*   **Сущность: `RoleAuthority` (Связь Роли и Привилегии)**
+    *   `role_authority_id` (PK, UUID) - Уникальный идентификатор записи.
+    *   `role_id` (FK, UUID) - Ссылка на `Role.role_id`.
+    *   `authority_id` (FK, UUID) - Ссылка на `Authority.authority_id`.
+    *   *Наследует аудиторские поля (`created_by`, `created_date`)*
+    *   **Уникальность:** Комбинация `role_id` и `authority_id` должна быть уникальной.
+
+*   **Сущность: `UserRole` (Связь Пользователя и Роли)**
+    *   `user_role_id` (PK, UUID) - Уникальный идентификатор записи.
+    *   `user_id` (FK, UUID) - Ссылка на `User.user_id`.
+    *   `role_id` (FK, UUID) - Ссылка на `Role.role_id`.
+    *   *Наследует аудиторские поля (`created_by`, `created_date`)*
+    *   **Уникальность:** Комбинация `user_id` и `role_id` должна быть уникальной.
+
+*   **Сущность: `FileStorage` (Хранилище Файлов)**
+    *   `file_id` (PK, UUID) - Уникальный ID файла.
+    *   `store_type` (String) - Тип загруженного файла (например, 'AVATAR').
+    *   `filename` (String) - Имя файла.
+    *   `file_size` (BIGINT) - Размер файла в байтах.
+    *   `content_type` (String) - MIME Type файла.
+    *   `bucket` (String) - Директория хранения (например, 'avatars').
+    *   *Наследует аудиторские поля*
+
+*   **Сущность: `UserEvent` (Событие Пользователя)**
+    *   `event_id` (PK, UUID) - Уникальный идентификатор события.
+    *   `event_type` (String) - Тип события (например, 'LOGIN_SUCCESS', 'PASSWORD_CHANGE').
+    *   `user_agent` (String) - Значение заголовка User-Agent.
+    *   `ip_address` (String, nullable) - IP-адрес пользователя.
+    *   `client_id` (String, nullable) - ID клиента, через который произошло событие.
+    *   `agent_browser` (String, nullable) - Браузер пользователя.
+    *   `agent_device` (String, nullable) - Устройство пользователя.
+    *   `agent_os` (String, nullable) - Операционная система пользователя.
+    *   *Наследует аудиторские поля (`created_by`, `created_date`)*
+
+*   **Сущность: `UserClient` (Связь Пользователя и Клиента)**
+    *   `user_client_id` (PK, UUID) - Уникальный идентификатор записи.
+    *   `user_id` (FK, UUID) - Ссылка на `User.user_id`.
+    *   `client_id` (FK, String) - Ссылка на `SystemOAuth2Client.client_id` (или `SystemOAuth2ClientV2.client_id`).
+    *   `deleted` (Boolean) - Флаг, указывающий, помечена ли запись на удаление.
+    *   *Наследует аудиторские поля*
+    *   **Уникальность:** Комбинация `user_id` и `client_id` должна быть уникальной.
+
+*   **Сущность: `Scope` (Область Доступа)**
+    *   `scope_id` (PK, UUID) - Уникальный идентификатор scope.
+    *   `scope_code` (String, UNIQUE с `system_code`) - Код scope.
+    *   `scope_description` (String) - Описание scope.
+    *   `system_code` (String) - Код системы, к которой принадлежит scope.
+    *   `active` (Boolean) - Флаг активности.
+    *   *Наследует аудиторские поля*
+
+*   **Представление: `ScopeView` (Представление Областей Доступа)**
+    *   `scope_id` (UUID)
+    *   `scope_unique_code` (String) - Уникальный код scope, формируемый как `system_code.scope_code`.
+    *   `scope_description` (String)
+    *   `system_code` (String)
+    *   `active` (Boolean)
+    *   **Примечание:** Это представление, а не таблица. Оно упрощает получение уникального идентификатора scope.
+
 
 ---
 

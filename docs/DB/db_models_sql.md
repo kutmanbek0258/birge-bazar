@@ -143,56 +143,368 @@ CREATE TABLE user_service.favorite_products (
 #### **2. Auth Service (База данных: `auth_db`)**
 
 ```sql
--- Таблица для учетных данных пользователя
-CREATE TABLE auth_service.user_credentials (
-    user_id BIGINT PRIMARY KEY, -- Logical FK to user_db.users(user_id)
-    password_hash TEXT NOT NULL,
-    email_verified BOOLEAN DEFAULT FALSE,
-    phone_verified BOOLEAN DEFAULT FALSE,
-    created_by VARCHAR(255),
-    created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    last_modified_by VARCHAR(255),
-    last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- Схема для сервиса аутентификации
+CREATE SCHEMA IF NOT EXISTS sso;
+
+-- Таблица для пользователей
+CREATE TABLE sso.users
+(
+    user_id               UUID                        NOT NULL DEFAULT uuid_generate_v4(),
+    email                 VARCHAR(100)                NOT NULL,
+    password_hash         VARCHAR(500),
+    first_name            varchar(100)                NOT NULL,
+    last_name             varchar(100)                NOT NULL,
+    middle_name           varchar(100),
+    birthday              date,
+    active                boolean                     not null default false,
+
+    created_by            VARCHAR(50)                 NOT NULL DEFAULT 'system',
+    created_date          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT current_timestamp,
+    last_updated_by       VARCHAR(50)                 NOT NULL DEFAULT 'system',
+    last_updated_date     TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT current_timestamp,
+    object_version_number INTEGER                     NOT NULL DEFAULT 0,
+    constraint users_pk PRIMARY KEY (user_id)
 );
 
--- Таблица для сессий пользователя
-CREATE TABLE auth_service.user_sessions (
-    session_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id BIGINT NOT NULL, -- Logical FK to user_db.users(user_id)
-    jwt_token TEXT, -- Optional: if session tokens are managed server-side
-    refresh_token UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
-    device_info TEXT,
-    ip_address INET NOT NULL, -- Or VARCHAR(45) for IPv6
-    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_by VARCHAR(255),
-    created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    last_modified_by VARCHAR(255),
-    last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+COMMENT ON TABLE sso.users IS 'Пользователи';
+COMMENT ON COLUMN sso.users.user_id IS 'УИ пользователя';
+COMMENT ON COLUMN sso.users.email IS 'Логин пользователя';
+COMMENT ON COLUMN sso.users.password_hash IS 'Хэш пароля';
+COMMENT ON COLUMN sso.users.first_name IS 'Имя';
+COMMENT ON COLUMN sso.users.last_name IS 'Фамилия';
+COMMENT ON COLUMN sso.users.middle_name IS 'Отчество';
+COMMENT ON COLUMN sso.users.birthday IS 'Дата рождения';
+COMMENT ON COLUMN sso.users.active IS 'Статус пользователя, активен или неактивен';
+
+COMMENT ON column sso.users.created_by IS 'Логин пользователя, создавшего запись';
+COMMENT ON column sso.users.created_date IS 'Дата создания записи';
+COMMENT ON column sso.users.last_updated_by IS 'Логин пользователя, изменившего запись';
+COMMENT ON column sso.users.last_updated_date IS 'Дата последнего обновления записи';
+COMMENT ON column sso.users.object_version_number IS 'Номер версии записи в БД';
+
+-- Changeset users-2: Add unique index on email
+CREATE UNIQUE INDEX IF NOT EXISTS idx_user_u1 ON sso.users (email);
+
+-- Changeset users-3: Add avatar_file_id
+ALTER TABLE sso.users
+    ADD COLUMN avatar_file_id uuid;
+COMMENT ON column sso.users.avatar_file_id IS 'ID файла в файловом хранилище для аватарки';
+
+-- Changeset users-4: Drop avatar_url
+ALTER TABLE sso.users
+    DROP COLUMN avatar_url;
+
+-- Changeset users-5: Add admin column
+ALTER TABLE sso.users
+    ADD COLUMN admin BOOLEAN NOT NULL DEFAULT FALSE;
+COMMENT ON column sso.users.admin IS 'Является ли пользователь админом';
+
+-- Changeset users-7: Add superuser column
+ALTER TABLE sso.users
+    ADD COLUMN superuser BOOLEAN NOT NULL DEFAULT FALSE;
+COMMENT ON column sso.users.superuser IS 'Является ли пользователь суперпользователем (нельзя удалить)';
+
+
+-- Таблица для OAuth2 клиентов системы (старая версия)
+CREATE SEQUENCE sso.system_oauth2_clients_sq START 1;
+CREATE TABLE sso.system_oauth2_clients
+(
+    system_client_id              BIGINT        NOT NULL DEFAULT nextval('sso.system_oauth2_clients_sq'),
+    client_id                     VARCHAR(100)  NOT NULL,
+    client_id_issued_at           TIMESTAMP              DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    client_secret                 VARCHAR(200),
+    client_secret_expires_at      TIMESTAMP,
+    client_name                   VARCHAR(200)  NOT NULL,
+    client_authentication_methods VARCHAR(1000) NOT NULL,
+    authorization_grant_types     VARCHAR(1000) NOT NULL,
+    redirect_uris                 VARCHAR(1000),
+    scopes                        VARCHAR(1000) NOT NULL,
+    client_settings               VARCHAR(2000),
+    token_settings                VARCHAR(2000),
+    constraint system_oauth2_clients_pk primary key (system_client_id)
 );
 
--- Таблица для настроек двухфакторной аутентификации
-CREATE TABLE auth_service.two_factor_auth_settings (
-    user_id BIGINT PRIMARY KEY, -- Logical FK to user_db.users(user_id)
-    is_enabled BOOLEAN DEFAULT FALSE NOT NULL,
-    method auth_service.auth_two_factor_method_enum,
-    totp_secret VARCHAR(255),
-    sms_code_last_sent_at TIMESTAMP WITH TIME ZONE,
-    email_code_last_sent_at TIMESTAMP WITH TIME ZONE,
-    created_by VARCHAR(255),
-    created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    last_modified_by VARCHAR(255),
-    last_modified_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+COMMENT ON table sso.system_oauth2_clients IS 'OAuth2 клиенты системы';
+COMMENT ON column sso.system_oauth2_clients.client_id IS 'ID клиента';
+COMMENT ON column sso.system_oauth2_clients.client_id_issued_at IS 'Дата создания записи';
+COMMENT ON column sso.system_oauth2_clients.client_secret IS 'Пароль';
+COMMENT ON column sso.system_oauth2_clients.client_secret_expires_at IS 'Срок действия пароля';
+COMMENT ON column sso.system_oauth2_clients.client_name IS 'Наименование клиента';
+COMMENT ON column sso.system_oauth2_clients.client_authentication_methods IS 'Доступные методы аутентификации';
+COMMENT ON column sso.system_oauth2_clients.authorization_grant_types IS 'Типы доступа';
+COMMENT ON column sso.system_oauth2_clients.redirect_uris IS 'Доступные URL-ы перенаправления';
+COMMENT ON column sso.system_oauth2_clients.scopes IS 'Области доступа';
+COMMENT ON column sso.system_oauth2_clients.client_settings IS 'Дополнительные настройки клиента';
+COMMENT ON column sso.system_oauth2_clients.token_settings IS 'Дополнительные настройки токена';
+CREATE UNIQUE INDEX idx_system_oauth2_clients_n1 ON sso.system_oauth2_clients (client_id);
 
--- Таблица для истории входов
-CREATE TABLE auth_service.login_history (
-    entry_id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL, -- Logical FK to user_db.users(user_id)
-    login_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    ip_address INET NOT NULL,
-    device_info TEXT,
-    status auth_service.auth_login_status_enum NOT NULL
+
+-- Таблица для справочника привилегий
+CREATE TABLE sso.authorities
+(
+    authority_id          UUID                        NOT NULL default uuid_generate_v4(),
+    authority_code        VARCHAR(100)                NOT NULL,
+    authority_description VARCHAR(500)                NOT NULL,
+    system_code           VARCHAR(50)                 NOT NULL,
+    active                boolean                     not null default true,
+
+    created_by            VARCHAR(50)                 NOT NULL DEFAULT 'system',
+    created_date          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT current_timestamp,
+    last_updated_by       VARCHAR(50)                 NOT NULL DEFAULT 'system',
+    last_updated_date     TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT current_timestamp,
+    object_version_number INTEGER                     NOT NULL DEFAULT 0,
+    constraint authorities_pk PRIMARY KEY (authority_id)
+);
+COMMENT ON TABLE sso.authorities IS 'Справочник привилегий';
+COMMENT ON COLUMN sso.authorities.authority_id IS 'Уникальный идентификатор привилегии';
+COMMENT ON COLUMN sso.authorities.authority_code IS 'Код привилегии';
+COMMENT ON COLUMN sso.authorities.authority_description IS 'Описание привилегии';
+COMMENT ON COLUMN sso.authorities.system_code IS 'Код системы, к которой принадлежит привилегия';
+COMMENT ON COLUMN sso.authorities.active IS 'Флаг активности';
+COMMENT ON column sso.authorities.created_by IS 'Логин пользователя, создавшего запись';
+COMMENT ON column sso.authorities.created_date IS 'Дата создания записи';
+COMMENT ON column sso.authorities.last_updated_by IS 'Логин пользователя, изменившего запись';
+COMMENT ON column sso.authorities.last_updated_date IS 'Дата последнего обновления записи';
+COMMENT ON column sso.authorities.object_version_number IS 'Номер версии записи в БД';
+CREATE UNIQUE INDEX idx_authorities_u1 ON sso.authorities (authority_code, system_code);
+
+
+-- Таблица для справочника ролей
+CREATE TABLE sso.roles
+(
+    role_id               UUID                        NOT NULL default uuid_generate_v4(),
+    role_code             VARCHAR(50)                 NOT NULL,
+    role_description      VARCHAR(500)                NOT NULL,
+    system_code           VARCHAR(50),
+    active                boolean                     not null default true,
+
+    created_by            VARCHAR(50)                 NOT NULL DEFAULT 'system',
+    created_date          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT current_timestamp,
+    last_updated_by       VARCHAR(50)                 NOT NULL DEFAULT 'system',
+    last_updated_date     TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT current_timestamp,
+    object_version_number INTEGER                     NOT NULL DEFAULT 0,
+    constraint roles_pk PRIMARY KEY (role_id) -- Changed from role_code to role_id
+);
+COMMENT ON TABLE sso.roles IS 'Справочник ролей';
+COMMENT ON COLUMN sso.roles.role_id IS 'Уникальный идентификатор роли';
+COMMENT ON COLUMN sso.roles.role_code IS 'Код роли';
+COMMENT ON COLUMN sso.roles.role_description IS 'Описание роли';
+COMMENT ON COLUMN sso.roles.system_code IS 'Код системы, к которой принадлежит привилегия';
+COMMENT ON COLUMN sso.roles.active IS 'Флаг активности';
+COMMENT ON column sso.roles.created_by IS 'Логин пользователя, создавшего запись';
+COMMENT ON column sso.roles.created_date IS 'Дата создания записи';
+COMMENT ON column sso.roles.last_updated_by IS 'Логин пользователя, изменившего запись';
+COMMENT ON column sso.roles.last_updated_date IS 'Дата последнего обновления записи';
+COMMENT ON column sso.roles.object_version_number IS 'Номер версии записи в БД';
+CREATE UNIQUE INDEX idx_roles_u1 ON sso.roles (role_code, system_code);
+
+
+-- Таблица для маппинга ролей и привилегий
+CREATE TABLE sso.role_authorities
+(
+    role_authority_id UUID                        NOT NULL DEFAULT uuid_generate_v4(),
+    role_id           UUID                        NOT NULL,
+    authority_id      UUID                        NOT NULL,
+
+    created_by        VARCHAR(50)                 NOT NULL DEFAULT 'system',
+    created_date      TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT current_timestamp,
+    constraint role_authorities_pk PRIMARY KEY (role_authority_id)
+);
+COMMENT ON TABLE sso.role_authorities IS 'Маппинг ролей и привилегий';
+COMMENT ON COLUMN sso.role_authorities.role_authority_id IS 'Уникальный идентификатор записи';
+COMMENT ON COLUMN sso.role_authorities.role_id IS 'Уникальный код привилегии'; -- Should be role_id
+COMMENT ON COLUMN sso.role_authorities.authority_id IS 'Уникальный код привилегии';
+COMMENT ON column sso.role_authorities.created_by IS 'Логин пользователя, создавшего запись';
+COMMENT ON column sso.role_authorities.created_date IS 'Дата создания записи';
+CREATE UNIQUE INDEX idx_role_authorities_u1 ON sso.role_authorities (role_id, authority_id);
+
+
+-- Таблица для маппинга пользователей и ролей
+CREATE TABLE sso.user_roles
+(
+    user_role_id UUID                        NOT NULL DEFAULT uuid_generate_v4(),
+    user_id      UUID                        NOT NULL,
+    role_id      UUID                        NOT NULL,
+
+    created_by   VARCHAR(50)                 NOT NULL DEFAULT 'system',
+    created_date TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT current_timestamp,
+    constraint user_roles_pk PRIMARY KEY (user_role_id)
+);
+COMMENT ON TABLE sso.user_roles IS 'Маппинг пользователей и ролей';
+COMMENT ON COLUMN sso.user_roles.user_role_id IS 'УИ записи';
+COMMENT ON COLUMN sso.user_roles.user_id IS 'Уникальный идентификатор пользователя';
+COMMENT ON COLUMN sso.user_roles.role_id IS 'Уникальный идентификатор роли';
+COMMENT ON column sso.user_roles.created_by IS 'Логин пользователя, создавшего запись';
+COMMENT ON column sso.user_roles.created_date IS 'Дата создания записи';
+CREATE UNIQUE INDEX idx_user_roles_u1 ON sso.user_roles (user_id, role_id);
+
+
+-- Таблица для хранилища файлов
+CREATE TABLE sso.file_storage
+(
+    file_id               uuid                        not null default uuid_generate_v4(),
+    store_type            varchar(50)                 not null,
+    filename              varchar(255)                not null,
+    file_size             bigint                      not null,
+    content_type          varchar(100)                not null,
+    bucket                varchar(50)                 not null,
+
+    created_by            VARCHAR(50)                 NOT NULL DEFAULT 'system',
+    created_date          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT current_timestamp,
+    last_updated_by       VARCHAR(50)                 NOT NULL DEFAULT 'system',
+    last_updated_date     TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT current_timestamp,
+    object_version_number INTEGER                     NOT NULL DEFAULT 0,
+    constraint file_storage_pk PRIMARY KEY (file_id)
+);
+COMMENT ON table sso.file_storage IS 'Хранилище файлов';
+COMMENT ON column sso.file_storage.file_id IS 'Уникальный ID записи';
+COMMENT ON column sso.file_storage.store_type IS 'Тип загруженного файла';
+COMMENT ON column sso.file_storage.filename IS 'Наименование файла';
+COMMENT ON column sso.file_storage.file_size IS 'Размер файла (байт)';
+COMMENT ON column sso.file_storage.content_type IS 'MIME Type';
+COMMENT ON column sso.file_storage.bucket IS 'Директория хранения';
+COMMENT ON column sso.file_storage.created_by IS 'Логин пользователя, создавшего запись';
+COMMENT ON column sso.file_storage.created_date IS 'Дата создания записи';
+COMMENT ON column sso.file_storage.last_updated_by IS 'Логин пользователя, изменившего запись';
+COMMENT ON column sso.file_storage.last_updated_date IS 'Дата последнего обновления записи';
+COMMENT ON column sso.file_storage.object_version_number IS 'Номер версии записи в БД';
+
+
+-- Таблица для OAuth2 клиентов системы (версия 2)
+CREATE TABLE sso.system_oauth2_clients_v2
+(
+    client_id                     VARCHAR(100)                NOT NULL,
+    client_secret                 VARCHAR(255),
+    client_secret_expires_at      TIMESTAMP,
+    client_name                   VARCHAR(200)                NOT NULL,
+    client_authentication_methods VARCHAR(20)[]               NOT NULL,
+    authorization_grant_types     VARCHAR(20)[]               NOT NULL,
+    redirect_uris                 VARCHAR(255)[],
+    scopes                        VARCHAR(100)[]              NOT NULL,
+    delete_notify_uris            VARCHAR(255)[],
+
+    created_by                    VARCHAR(50)                 NOT NULL DEFAULT 'system',
+    created_date                  TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT current_timestamp,
+    last_updated_by               VARCHAR(50)                 NOT NULL DEFAULT 'system',
+    last_updated_date             TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT current_timestamp,
+    object_version_number         INTEGER                     NOT NULL DEFAULT 0,
+    constraint system_oauth2_clients_v2_pk primary key (client_id)
+);
+COMMENT ON table sso.system_oauth2_clients_v2 IS 'OAuth2 клиенты системы';
+COMMENT ON column sso.system_oauth2_clients_v2.client_id IS 'ID клиента';
+COMMENT ON column sso.system_oauth2_clients_v2.client_secret IS 'Пароль';
+COMMENT ON column sso.system_oauth2_clients_v2.client_secret_expires_at IS 'Срок действия пароля';
+COMMENT ON column sso.system_oauth2_clients_v2.client_name IS 'Наименование клиента';
+COMMENT ON column sso.system_oauth2_clients_v2.client_authentication_methods IS 'Доступные методы аутентификации';
+COMMENT ON column sso.system_oauth2_clients_v2.authorization_grant_types IS 'Типы доступа';
+COMMENT ON column sso.system_oauth2_clients_v2.redirect_uris IS 'Доступные URL-ы перенаправления';
+COMMENT ON column sso.system_oauth2_clients_v2.scopes IS 'Области доступа';
+COMMENT ON column sso.system_oauth2_clients_v2.delete_notify_uris IS 'Доступные URL-ы уведомления об удалении аккаунта';
+COMMENT ON column sso.system_oauth2_clients_v2.created_by IS 'Логин пользователя, создавшего запись';
+COMMENT ON column sso.system_oauth2_clients_v2.created_date IS 'Дата создания записи';
+COMMENT ON column sso.system_oauth2_clients_v2.last_updated_by IS 'Логин пользователя, изменившего запись';
+COMMENT ON column sso.system_oauth2_clients_v2.last_updated_date IS 'Дата последнего обновления записи';
+COMMENT ON column sso.system_oauth2_clients_v2.object_version_number IS 'Номер версии записи в БД';
+
+
+-- Таблица для событий пользователей
+CREATE TABLE sso.user_events
+(
+    event_id      UUID                        NOT NULL DEFAULT uuid_generate_v4(),
+    event_type    VARCHAR(100)                NOT NULL,
+    user_agent    VARCHAR(500)                NOT NULL,
+    ip_address    varchar(50),
+    client_id     varchar(50),
+    agent_browser varchar(50),
+    agent_device  varchar(50),
+    agent_os      varchar(50),
+
+    created_by    VARCHAR(50)                 NOT NULL DEFAULT 'system',
+    created_date  TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT current_timestamp,
+    constraint user_events_pk PRIMARY KEY (event_id)
+);
+COMMENT ON TABLE sso.user_events IS 'События пользователей';
+COMMENT ON COLUMN sso.user_events.event_id IS 'УИ пользователя';
+COMMENT ON COLUMN sso.user_events.event_type IS 'Логин пользователя';
+COMMENT ON COLUMN sso.user_events.user_agent IS 'Значение заголовка запроса User-Agent';
+COMMENT ON COLUMN sso.user_events.ip_address IS 'IP адрес пользователя';
+COMMENT ON COLUMN sso.user_events.client_id IS 'Уникальный идентификатор клиента';
+COMMENT ON COLUMN sso.user_events.agent_browser IS 'Браузер пользователя';
+COMMENT ON COLUMN sso.user_events.agent_device IS 'Информация об устройстве пользователя';
+COMMENT ON COLUMN sso.user_events.agent_os IS 'Информация об OS пользователя';
+COMMENT ON column sso.user_events.created_by IS 'Логин пользователя, создавшего запись';
+COMMENT ON column sso.user_events.created_date IS 'Дата создания записи';
+CREATE INDEX idx_user_events_n1 ON sso.user_events (date(created_date));
+CREATE INDEX idx_user_events_n2 ON sso.user_events (created_by);
+
+
+-- Таблица для связи пользователя и клиента системы
+CREATE TABLE sso.user_clients
+(
+    user_client_id        UUID                        NOT NULL DEFAULT uuid_generate_v4(),
+    user_id               UUID                        NOT NULL,
+    client_id             VARCHAR(100)                not null,
+    deleted               boolean                     not null default false,
+
+    created_by            VARCHAR(50)                 NOT NULL DEFAULT 'system',
+    created_date          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT current_timestamp,
+    last_updated_by       VARCHAR(50)                 NOT NULL DEFAULT 'system',
+    last_updated_date     TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT current_timestamp,
+    object_version_number INTEGER                     NOT NULL DEFAULT 0,
+    constraint user_client_pk PRIMARY KEY (user_client_id)
+);
+COMMENT ON TABLE sso.user_clients IS 'Связь пользователя и клиента системы для которого проходил аутентификацию';
+COMMENT ON COLUMN sso.user_clients.user_client_id IS 'УИ записи';
+COMMENT ON COLUMN sso.user_clients.user_id IS 'УИ пользователя';
+COMMENT ON COLUMN sso.user_clients.client_id IS 'УИ клиента';
+COMMENT ON COLUMN sso.user_clients.deleted IS 'Запись помечена на удаление';
+COMMENT ON column sso.user_clients.created_by IS 'Логин пользователя, создавшего запись';
+COMMENT ON column sso.user_clients.created_date IS 'Дата создания записи';
+COMMENT ON column sso.user_clients.last_updated_by IS 'Логин пользователя, изменившего запись';
+COMMENT ON column sso.user_clients.last_updated_date IS 'Дата последнего обновления записи';
+COMMENT ON column sso.user_clients.object_version_number IS 'Номер версии записи в БД';
+CREATE UNIQUE INDEX IF NOT EXISTS idx_user_u1 ON sso.user_clients (user_id, client_id);
+
+
+-- Таблица для областей доступа (scopes)
+CREATE TABLE sso.scopes
+(
+    scope_id              UUID                        NOT NULL default uuid_generate_v4(),
+    scope_code            VARCHAR(100)                NOT NULL,
+    scope_description     VARCHAR(500)                NOT NULL,
+    system_code           VARCHAR(50)                 NOT NULL,
+    active                boolean                     not null default true,
+
+    created_by            VARCHAR(50)                 NOT NULL DEFAULT 'system',
+    created_date          TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT current_timestamp,
+    last_updated_by       VARCHAR(50)                 NOT NULL DEFAULT 'system',
+    last_updated_date     TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT current_timestamp,
+    object_version_number INTEGER                     NOT NULL DEFAULT 0,
+    constraint scopes_pk PRIMARY KEY (scope_id)
+);
+COMMENT ON TABLE sso.scopes IS 'Справочник привилегий';
+COMMENT ON COLUMN sso.scopes.scope_id IS 'Уникальный идентификатор scope';
+COMMENT ON COLUMN sso.scopes.scope_code IS 'Код scope';
+COMMENT ON COLUMN sso.scopes.scope_description IS 'Описание scope';
+COMMENT ON COLUMN sso.scopes.system_code IS 'Код системы, к которой принадлежит scope';
+COMMENT ON COLUMN sso.scopes.active IS 'Флаг активности';
+COMMENT ON column sso.scopes.created_by IS 'Логин пользователя, создавшего запись';
+COMMENT ON column sso.scopes.created_date IS 'Дата создания записи';
+COMMENT ON column sso.scopes.last_updated_by IS 'Логин пользователя, изменившего запись';
+COMMENT ON column sso.scopes.last_updated_date IS 'Дата последнего обновления записи';
+COMMENT ON column sso.scopes.object_version_number IS 'Номер версии записи в БД';
+CREATE UNIQUE INDEX idx_scopes_u1 ON sso.scopes (scope_code, system_code);
+
+
+-- Представление для областей доступа (scopes)
+CREATE OR REPLACE VIEW sso.scopes_vw AS
+(
+SELECT scope_id,
+       system_code || '.' || scope_code AS scope_unique_code,
+       scope_description,
+       system_code,
+       active
+FROM sso.scopes
 );
 ```
 
