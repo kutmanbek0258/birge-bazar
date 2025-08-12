@@ -21,6 +21,10 @@ spring:
     hibernate:
       ddl-auto: update
 
+  liquibase:
+    enabled: true
+    change-log: classpath:database/db.changelog-master.yaml
+
   auth-types:
     auth-header-enabled: true
     client-credentials-enabled: true

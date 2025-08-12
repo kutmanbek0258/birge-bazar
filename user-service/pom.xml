@@ -57,10 +57,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -69,9 +65,13 @@
 
         <!--        Utils-->
         <dependency>
-            <groupId>javax.validation</groupId>
-            <artifactId>validation-api</artifactId>
-            <version>2.0.1.Final</version>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>3.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
         </dependency>
         <dependency>
             <groupId>cn.hutool</groupId>
@@ -138,6 +138,7 @@
                 <configuration>
                     <propertyFile>database/liquibase.properties</propertyFile>
                     <promptOnNonLocalDatabase>false</promptOnNonLocalDatabase>
+                    <changeLogFile>database/db.changelog-master.yaml</changeLogFile>
                 </configuration>
             </plugin>
         </plugins>
